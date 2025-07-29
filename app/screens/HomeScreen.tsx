@@ -185,7 +185,7 @@ export default function HomeScreen() {
                 
                 {/* Next Reward in bottom right */}
                 <View style={styles.nextRewardContainer}>
-                  <Text style={styles.nextRewardLabel}>Next Reward</Text>
+                  <Text style={styles.nextRewardLabel}>Unlock Active Pro</Text>
                   <Text style={styles.nextRewardValue}>{membershipData.points.toLocaleString()}/{membershipData.nextRewardTarget.toLocaleString()}</Text>
                 </View>
               </View>
@@ -404,12 +404,12 @@ const styles = StyleSheet.create({
   },
   nextRewardLabel: {
     color: '#888',
-    fontSize: 11,
+    fontSize: 7,
     marginBottom: 2,
   },
   nextRewardValue: {
     color: 'white',
-    fontSize: 14,
+    fontSize: 8,
   },
   barcodeSection: {
     backgroundColor: 'white',

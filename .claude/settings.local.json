@@ -6,7 +6,15 @@
       "Bash(rm:*)",
       "Bash(npx expo start:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm run lint)",
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(npm audit:*)",
+      "Bash(find:*)",
+      "Bash(expo doctor:*)",
+      "Bash(npx expo doctor:*)",
+      "Bash(npx:*)"
     ],
     "deny": []
   }

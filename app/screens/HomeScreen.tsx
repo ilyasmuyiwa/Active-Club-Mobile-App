@@ -138,7 +138,7 @@ export default function HomeScreen() {
               <TouchableOpacity style={styles.activityCard}>
                 <View style={styles.activityIcon}>
                   <MaterialCommunityIcons 
-                    name={activity.icon} 
+                    name={activity.icon as any} 
                     size={24} 
                     color="#333" 
                   />

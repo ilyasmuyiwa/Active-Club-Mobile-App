@@ -56,10 +56,33 @@ The app has an Adobe XD prototype with the following screens planned:
 active-club/
 ├── app/                    # Screen components using file-based routing
 │   ├── (tabs)/            # Tab-based screens
+│   ├── screens/           # Screen components
 │   └── _layout.tsx        # Root navigation setup
 ├── components/            # Reusable UI components
+│   ├── common/           # Shared components
 │   └── ui/               # Platform-specific UI components
 ├── constants/            # App constants (colors, etc.)
 ├── hooks/                # Custom React hooks
-└── assets/               # Images and fonts
+├── assets/               # Images and fonts
+└── active-club-screen-1/  # Design mockups (12 screens)
 ```
+
+## Screen Implementation Status
+1. ✅ Home Screen - Membership card, points, activities feed
+2. ⏳ Settings Screen
+3. ⏳ FAQ Screen
+4. ⏳ Contact Screen
+5. ⏳ Contact Form (Get in Touch) Screen
+6. ⏳ Terms & Conditions Screen
+7. ⏳ Privacy Screen
+8. ⏳ Notifications Screen
+9. ⏳ Partners Screen
+10. ⏳ Activities Screen
+11. ⏳ Profile Screen
+12. ⏳ User Level Screen
+
+## Key Implementation Details
+- **Home Screen**: Features a gradient header with user profile, ActiveFit membership card showing points and rewards, barcode for scanning, and latest activities feed
+- **Navigation**: Bottom tab navigation with Home, Activity, Partners, and Notifications
+- **Static Data**: Currently using mock data for all dynamic content
+- **Design System**: Following Adobe XD designs with #F5A623 (orange) as primary color

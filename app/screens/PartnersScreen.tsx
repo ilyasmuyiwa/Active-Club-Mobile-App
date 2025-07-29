@@ -87,7 +87,7 @@ export default function PartnersScreen() {
             Loyalty Partners
           </Text>
           <Text style={[styles.sectionDescription, { color: colors.icon }]}>
-            We've teamed up with top sportswear brands to bring you even more ways to enjoy your loyalty benefits. Earn points as you shop with our trusted partners and stay tuned, more exciting names are on the way.
+            We&apos;ve teamed up with top sportswear brands to bring you even more ways to enjoy your loyalty benefits. Earn points as you shop with our trusted partners and stay tuned, more exciting names are on the way.
           </Text>
         </View>
 

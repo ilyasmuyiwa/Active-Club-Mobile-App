@@ -123,12 +123,16 @@ export default function HomeScreen() {
         >
           <View style={styles.header}>
             <View style={styles.profileInfo}>
-              <View style={styles.avatarContainer}>
+              <TouchableOpacity 
+                style={styles.avatarContainer}
+                onPress={() => router.push('/profile')}
+                activeOpacity={0.7}
+              >
                 <Image
                   source={{ uri: 'https://i.pravatar.cc/100?img=3' }}
                   style={styles.avatar}
                 />
-              </View>
+              </TouchableOpacity>
               <View style={styles.welcomeText}>
                 <Text style={styles.welcomeLabel}>Welcome back,</Text>
                 <Text style={styles.userName}>Jhon Smith</Text>
@@ -181,7 +185,7 @@ export default function HomeScreen() {
                 
                 {/* Next Reward in bottom right */}
                 <View style={styles.nextRewardContainer}>
-                  <Text style={styles.nextRewardLabel}>Unlock Active Pro</Text>
+                  <Text style={styles.nextRewardLabel}>Next Reward</Text>
                   <Text style={styles.nextRewardValue}>{membershipData.points.toLocaleString()}/{membershipData.nextRewardTarget.toLocaleString()}</Text>
                 </View>
               </View>
@@ -400,12 +404,12 @@ const styles = StyleSheet.create({
   },
   nextRewardLabel: {
     color: '#888',
-    fontSize: 7,
+    fontSize: 11,
     marginBottom: 2,
   },
   nextRewardValue: {
     color: 'white',
-    fontSize: 8,
+    fontSize: 14,
   },
   barcodeSection: {
     backgroundColor: 'white',

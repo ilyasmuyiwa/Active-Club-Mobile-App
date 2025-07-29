@@ -93,6 +93,11 @@ export default function SettingsScreen() {
             }
             onPress={() => {}}
           />
+          
+          <SettingsItem
+            title="My Level & Rewards"
+            onPress={() => router.push('/user-level')}
+          />
 
           <SettingsSection title="Help" icon="questionmark.circle.fill" />
           

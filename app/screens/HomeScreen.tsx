@@ -99,34 +99,32 @@ export default function HomeScreen() {
               </View>
 
               <View style={styles.pointsContainer}>
-                {/* Points Section with Progress Arc */}
-                <View style={styles.pointsSection}>
-                  <View style={styles.progressArcContainer}>
-                    {/* Background arc */}
-                    <View style={styles.backgroundArc} />
-                    {/* Progress arc - shows current progress */}
-                    <View style={[styles.progressArc, { 
-                      transform: [{ rotate: `${-90 + (membershipData.progressPercentage * 1.8)}deg` }] 
+                <View style={styles.leftSection}>
+                  {/* Semicircle progress */}
+                  <View style={styles.semicircleContainer}>
+                    {/* Background semicircle */}
+                    <View style={styles.backgroundSemicircle} />
+                    {/* Progress semicircle - yellow portion */}
+                    <View style={[styles.progressSemicircle, {
+                      transform: [{ rotate: `${-90}deg` }],
                     }]} />
-                  </View>
-                  
-                  <View style={styles.pointsContent}>
-                    <Text style={styles.pointsValue}>{membershipData.points.toLocaleString()}</Text>
-                    <Text style={styles.pointsLabel}>pts</Text>
-                    <Text style={styles.expiryText}>500pts expiring on {membershipData.pointsExpiry}</Text>
+                    
+                    {/* Content */}
+                    <View style={styles.contentInside}>
+                      <Text style={styles.pointsValue}>{membershipData.points.toLocaleString()}</Text>
+                      <Text style={styles.pointsLabel}>pts</Text>
+                      <Text style={styles.expiryText}>500pts expiring on {membershipData.pointsExpiry}</Text>
+                      
+                      <Text style={styles.rewardAmount}>{membershipData.rewardAmount}</Text>
+                      <Text style={styles.rewardCurrency}>QR</Text>
+                      <Text style={styles.rewardLabel}>TOTAL REDEEMABLE REWARD</Text>
+                    </View>
                   </View>
                 </View>
                 
-                {/* Large Reward Amount */}
-                <View style={styles.rewardSection}>
-                  <Text style={styles.rewardAmount}>{membershipData.rewardAmount}</Text>
-                  <Text style={styles.rewardCurrency}>QR</Text>
-                  <Text style={styles.rewardLabel}>TOTAL REDEEMABLE REWARD</Text>
-                  
-                  <View style={styles.nextRewardContainer}>
-                    <Text style={styles.nextRewardLabel}>Next Reward</Text>
-                    <Text style={styles.nextRewardValue}>{membershipData.points.toLocaleString()}/{membershipData.nextRewardTarget.toLocaleString()}</Text>
-                  </View>
+                <View style={styles.rightSection}>
+                  <Text style={styles.nextRewardLabel}>Next Reward</Text>
+                  <Text style={styles.nextRewardValue}>{membershipData.points.toLocaleString()}/{membershipData.nextRewardTarget.toLocaleString()}</Text>
                 </View>
               </View>
             </LinearGradient>
@@ -271,84 +269,87 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingVertical: 20,
   },
-  pointsSection: {
-    alignItems: 'center',
+  leftSection: {
+    flex: 1,
+  },
+  semicircleContainer: {
     position: 'relative',
+    width: 140,
+    height: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  progressArcContainer: {
+  backgroundSemicircle: {
     position: 'absolute',
-    width: 120,
-    height: 120,
-    left: -40,
-    top: -10,
-  },
-  backgroundArc: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     borderWidth: 4,
     borderColor: 'transparent',
-    borderLeftColor: '#444',
-    borderTopColor: '#444',
-    borderBottomColor: '#444',
-    transform: [{ rotate: '0deg' }],
+    borderLeftColor: '#555',
+    borderTopColor: '#555',
+    borderBottomColor: '#555',
   },
-  progressArc: {
+  progressSemicircle: {
     position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     borderWidth: 4,
     borderColor: 'transparent',
     borderLeftColor: '#F5A623',
     borderTopColor: '#F5A623',
     borderBottomColor: '#F5A623',
   },
-  pointsContent: {
+  contentInside: {
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 2,
+  },
+  rightSection: {
+    alignItems: 'flex-end',
   },
   pointsValue: {
     color: '#F5A623',
     fontSize: 20,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   pointsLabel: {
     color: '#F5A623',
     fontSize: 8,
-    marginTop: -1,
+    marginTop: -2,
+    textAlign: 'center',
   },
   expiryText: {
     color: '#999',
     fontSize: 7,
     marginTop: 3,
+    marginBottom: 8,
     textAlign: 'center',
-    maxWidth: 80,
-  },
-  rewardSection: {
-    alignItems: 'flex-end',
-    flex: 1,
+    maxWidth: 100,
   },
   rewardAmount: {
     color: '#F5A623',
-    fontSize: 48,
+    fontSize: 32,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   rewardCurrency: {
     color: '#F5A623',
-    fontSize: 16,
-    marginTop: -10,
+    fontSize: 12,
+    marginTop: -4,
+    textAlign: 'center',
   },
   rewardLabel: {
     color: '#999',
-    fontSize: 10,
-    marginTop: 5,
-  },
-  nextRewardContainer: {
-    marginTop: 10,
-    alignItems: 'flex-end',
+    fontSize: 7,
+    marginTop: 2,
+    textAlign: 'center',
+    maxWidth: 100,
+    lineHeight: 9,
   },
   nextRewardLabel: {
     color: '#999',

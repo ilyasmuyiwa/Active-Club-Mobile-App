@@ -1,18 +1,19 @@
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  SafeAreaView,
-  Image,
-  StatusBar,
-  TouchableOpacity,
   Dimensions,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import Svg, { Defs, Path, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
 
@@ -55,6 +56,61 @@ export default function HomeScreen() {
     },
   ];
 
+  // Progress Arc Component
+  const ProgressArc = ({ percentage }: { percentage: number }) => {
+    const size = 180;
+    const strokeWidth = 5;
+    const radius = (size - strokeWidth) / 2;
+    const startAngle = -210; // Start at -210 degrees (7:30 position)
+    const endAngle = 30; // End at 30 degrees (4:30 position)
+    const totalAngle = 240; // Total arc span in degrees
+    
+    // Convert angles to radians
+    const startAngleRad = (startAngle * Math.PI) / 180;
+    const endAngleRad = (endAngle * Math.PI) / 180;
+    
+    // Calculate arc endpoints
+    const startX = size / 2 + radius * Math.cos(startAngleRad);
+    const startY = size / 2 + radius * Math.sin(startAngleRad);
+    const endX = size / 2 + radius * Math.cos(endAngleRad);
+    const endY = size / 2 + radius * Math.sin(endAngleRad);
+    
+    // Calculate progress endpoint
+    const progressAngle = startAngle + (totalAngle * percentage) / 100;
+    const progressAngleRad = (progressAngle * Math.PI) / 180;
+    const progressX = size / 2 + radius * Math.cos(progressAngleRad);
+    const progressY = size / 2 + radius * Math.sin(progressAngleRad);
+
+    return (
+      <Svg width={size} height={size * 0.75}>
+        <Defs>
+          <SvgLinearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <Stop offset="0%" stopColor="#FFCE00" stopOpacity="0.7" />
+            <Stop offset="50%" stopColor="#F5A623" stopOpacity="0.9" />
+            <Stop offset="100%" stopColor="#FF8C00" stopOpacity="1" />
+          </SvgLinearGradient>
+        </Defs>
+        
+        {/* Background Arc - 240 degrees */}
+        <Path
+          d={`M ${startX} ${startY} A ${radius} ${radius} 0 1 1 ${endX} ${endY}`}
+          fill="none"
+          stroke="#444"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+        />
+        {/* Progress Arc with gradient */}
+        <Path
+          d={`M ${startX} ${startY} A ${radius} ${radius} 0 ${percentage > 50 ? 1 : 0} 1 ${progressX} ${progressY}`}
+          fill="none"
+          stroke="url(#progressGradient)"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+        />
+      </Svg>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F5A623" />
@@ -94,36 +150,38 @@ export default function HomeScreen() {
                   <MaterialCommunityIcons name="hexagon" size={24} color="white" />
                   <Text style={styles.cardLogoText}>ActiveFit</Text>
                 </View>
-                <Text style={styles.cardBrand}>active</Text>
-                <Text style={styles.clubText}>club</Text>
+                <View style={styles.brandContainer}>
+                  <Text style={styles.cardBrand}>active</Text>
+                  <Text style={styles.clubText}>club</Text>
+                </View>
               </View>
 
               <View style={styles.pointsContainer}>
-                <View style={styles.leftSection}>
-                  {/* Semicircle progress */}
-                  <View style={styles.semicircleContainer}>
-                    {/* Background semicircle */}
-                    <View style={styles.backgroundSemicircle} />
-                    {/* Progress semicircle - yellow portion */}
-                    <View style={[styles.progressSemicircle, {
-                      transform: [{ rotate: `${-90}deg` }],
-                    }]} />
+                {/* Centered Arc Section */}
+                <View style={styles.arcWrapper}>
+                  <View style={styles.arcContainer}>
+                    <ProgressArc percentage={membershipData.progressPercentage} />
                     
-                    {/* Content */}
-                    <View style={styles.contentInside}>
-                      <Text style={styles.pointsValue}>{membershipData.points.toLocaleString()}</Text>
-                      <Text style={styles.pointsLabel}>pts</Text>
+                    {/* Content Inside Arc */}
+                    <View style={styles.arcContent}>
+                      <View style={styles.pointsInfo}>
+                        <Text style={styles.pointsValue}>{membershipData.points.toLocaleString()}</Text>
+                        <Text style={styles.pointsLabel}>pts</Text>
+                      </View>
                       <Text style={styles.expiryText}>500pts expiring on {membershipData.pointsExpiry}</Text>
                       
-                      <Text style={styles.rewardAmount}>{membershipData.rewardAmount}</Text>
-                      <Text style={styles.rewardCurrency}>QR</Text>
+                      <View style={styles.rewardInfo}>
+                        <Text style={styles.rewardAmount}>{membershipData.rewardAmount}</Text>
+                        <Text style={styles.rewardCurrency}>QR</Text>
+                      </View>
                       <Text style={styles.rewardLabel}>TOTAL REDEEMABLE REWARD</Text>
                     </View>
                   </View>
                 </View>
                 
-                <View style={styles.rightSection}>
-                  <Text style={styles.nextRewardLabel}>Next Reward</Text>
+                {/* Next Reward in bottom right */}
+                <View style={styles.nextRewardContainer}>
+                  <Text style={styles.nextRewardLabel}>Unlock Active Pro</Text>
                   <Text style={styles.nextRewardValue}>{membershipData.points.toLocaleString()}/{membershipData.nextRewardTarget.toLocaleString()}</Text>
                 </View>
               </View>
@@ -237,11 +295,13 @@ const styles = StyleSheet.create({
   membershipCard: {
     borderRadius: 20,
     padding: 20,
-    minHeight: 200,
+    minHeight: 240,
+    position: 'relative',
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 20,
   },
   cardLogo: {
@@ -254,11 +314,14 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontWeight: '600',
   },
+  brandContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
   cardBrand: {
     color: 'white',
     fontSize: 24,
     fontWeight: 'bold',
-    marginLeft: 'auto',
   },
   clubText: {
     color: 'white',
@@ -266,98 +329,83 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   pointsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 20,
-  },
-  leftSection: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -10,
   },
-  semicircleContainer: {
+  arcWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  arcContainer: {
     position: 'relative',
-    width: 140,
-    height: 140,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backgroundSemicircle: {
+  arcContent: {
     position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    borderWidth: 4,
-    borderColor: 'transparent',
-    borderLeftColor: '#555',
-    borderTopColor: '#555',
-    borderBottomColor: '#555',
-  },
-  progressSemicircle: {
-    position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    borderWidth: 4,
-    borderColor: 'transparent',
-    borderLeftColor: '#F5A623',
-    borderTopColor: '#F5A623',
-    borderBottomColor: '#F5A623',
-  },
-  contentInside: {
+    top: 35,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2,
+    width: 200,
   },
-  rightSection: {
+  nextRewardContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
     alignItems: 'flex-end',
+  },
+  pointsInfo: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 2,
   },
   pointsValue: {
     color: '#F5A623',
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center',
   },
   pointsLabel: {
     color: '#F5A623',
-    fontSize: 8,
-    marginTop: -2,
-    textAlign: 'center',
+    fontSize: 12,
+    marginLeft: 3,
   },
   expiryText: {
-    color: '#999',
-    fontSize: 7,
-    marginTop: 3,
+    color: '#888',
+    fontSize: 9,
     marginBottom: 8,
     textAlign: 'center',
-    maxWidth: 100,
+  },
+  rewardInfo: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
   },
   rewardAmount: {
     color: '#F5A623',
-    fontSize: 32,
+    fontSize: 40,
     fontWeight: 'bold',
-    textAlign: 'center',
   },
   rewardCurrency: {
     color: '#F5A623',
-    fontSize: 12,
-    marginTop: -4,
-    textAlign: 'center',
+    fontSize: 16,
+    marginLeft: 3,
   },
   rewardLabel: {
-    color: '#999',
-    fontSize: 7,
+    color: '#888',
+    fontSize: 9,
     marginTop: 2,
     textAlign: 'center',
-    maxWidth: 100,
-    lineHeight: 9,
+    letterSpacing: 0.5,
   },
   nextRewardLabel: {
-    color: '#999',
-    fontSize: 10,
+    color: '#888',
+    fontSize: 7,
+    marginBottom: 2,
   },
   nextRewardValue: {
     color: 'white',
-    fontSize: 12,
+    fontSize: 8,
   },
   barcodeSection: {
     backgroundColor: 'white',

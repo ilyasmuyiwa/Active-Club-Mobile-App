@@ -98,10 +98,23 @@ export default function HomeScreen() {
               </View>
 
               <View style={styles.pointsContainer}>
-                <View style={styles.pointsCircle}>
-                  <Text style={styles.pointsValue}>{membershipData.points.toLocaleString()}</Text>
-                  <Text style={styles.pointsLabel}>pts</Text>
-                  <Text style={styles.expiryText}>500pts expiring on {membershipData.pointsExpiry}</Text>
+                <View style={styles.pointsSection}>
+                  <View style={styles.pointsCircleContainer}>
+                    {/* Background Circle */}
+                    <View style={styles.progressBackgroundCircle} />
+                    
+                    {/* Progress Arc - approximating 90% progress */}
+                    <View style={[styles.progressArc, styles.progressArc1]} />
+                    <View style={[styles.progressArc, styles.progressArc2]} />
+                    <View style={[styles.progressArc, styles.progressArc3]} />
+                    
+                    {/* Points Content */}
+                    <View style={styles.pointsContent}>
+                      <Text style={styles.pointsValue}>{membershipData.points.toLocaleString()}</Text>
+                      <Text style={styles.pointsLabel}>pts</Text>
+                      <Text style={styles.expiryText}>500pts expiring on {membershipData.pointsExpiry}</Text>
+                    </View>
+                  </View>
                 </View>
                 
                 <View style={styles.rewardInfo}>
@@ -258,23 +271,67 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  pointsCircle: {
+  pointsSection: {
     alignItems: 'center',
+  },
+  pointsCircleContainer: {
+    position: 'relative',
+    width: 100,
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  progressBackgroundCircle: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: '#444',
+  },
+  progressArc: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: 'transparent',
+  },
+  progressArc1: {
+    borderTopColor: '#F5A623',
+    borderRightColor: '#F5A623',
+    transform: [{ rotate: '0deg' }],
+  },
+  progressArc2: {
+    borderBottomColor: '#F5A623',
+    borderRightColor: '#F5A623',
+    transform: [{ rotate: '90deg' }],
+  },
+  progressArc3: {
+    borderBottomColor: '#F5A623',
+    borderLeftColor: '#F5A623',
+    transform: [{ rotate: '180deg' }],
+  },
+  pointsContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pointsValue: {
     color: '#F5A623',
-    fontSize: 36,
+    fontSize: 24,
     fontWeight: 'bold',
   },
   pointsLabel: {
     color: '#F5A623',
-    fontSize: 14,
-    marginTop: -5,
+    fontSize: 10,
+    marginTop: -2,
   },
   expiryText: {
     color: '#999',
-    fontSize: 10,
-    marginTop: 5,
+    fontSize: 7,
+    marginTop: 3,
+    textAlign: 'center',
+    maxWidth: 80,
   },
   rewardInfo: {
     alignItems: 'flex-end',

@@ -21,7 +21,7 @@ export default function ContactScreen() {
   };
 
   const handleGetInTouch = () => {
-    router.push('/(tabs)/contact-form' as any);
+    router.push('/contact-form');
   };
 
   return (

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
@@ -76,7 +77,7 @@ export default function HomeScreen() {
                 <Text style={styles.userName}>Jhon Smith</Text>
               </View>
             </View>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/settings')}>
               <Ionicons name="ellipsis-vertical" size={24} color="white" />
             </TouchableOpacity>
           </View>
@@ -168,29 +169,6 @@ export default function HomeScreen() {
           ))}
         </View>
       </ScrollView>
-
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="home" size={24} color="#F5A623" />
-          <Text style={[styles.navText, styles.activeNavText]}>Home</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="grid-outline" size={24} color="#999" />
-          <Text style={styles.navText}>Activity</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="star-outline" size={24} color="#999" />
-          <Text style={styles.navText}>Partners</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="notifications-outline" size={24} color="#999" />
-          <Text style={styles.navText}>Notifications</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }
@@ -422,25 +400,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#F44336',
     marginTop: 2,
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    paddingVertical: 10,
-    paddingBottom: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-  },
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  navText: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 4,
-  },
-  activeNavText: {
-    color: '#F5A623',
   },
 });

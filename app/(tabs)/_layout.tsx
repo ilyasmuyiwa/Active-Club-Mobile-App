@@ -14,7 +14,8 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: '#F5A623',
+        tabBarInactiveTintColor: '#999999',
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
@@ -23,7 +24,11 @@ export default function TabLayout() {
             // Use a transparent background on iOS to show the blur effect
             position: 'absolute',
           },
-          default: {},
+          default: {
+            backgroundColor: '#FFFFFF',
+            borderTopWidth: 1,
+            borderTopColor: '#E0E0E0',
+          },
         }),
       }}>
       <Tabs.Screen
@@ -52,20 +57,6 @@ export default function TabLayout() {
         options={{
           title: 'Notifications',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="bell.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="gearshape.fill" color={color} />,
         }}
       />
     </Tabs>

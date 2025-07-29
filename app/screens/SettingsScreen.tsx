@@ -98,24 +98,24 @@ export default function SettingsScreen() {
           
           <SettingsItem
             title="FAQs"
-            onPress={() => router.push('/(tabs)/faq' as any)}
+            onPress={() => router.push('/faq')}
           />
           
           <SettingsItem
             title="Contact us"
-            onPress={() => router.push('/(tabs)/contact' as any)}
+            onPress={() => router.push('/contact')}
           />
 
           <SettingsSection title="Legal" icon="doc.text.fill" />
           
           <SettingsItem
             title="Terms and conditions"
-            onPress={() => router.push('/(tabs)/terms' as any)}
+            onPress={() => router.push('/terms')}
           />
           
           <SettingsItem
             title="Privacy policy"
-            onPress={() => router.push('/(tabs)/privacy' as any)}
+            onPress={() => router.push('/privacy')}
           />
 
           <TouchableOpacity 

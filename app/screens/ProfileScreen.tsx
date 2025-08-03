@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#F5A623',
+    backgroundColor: '#F1C229',
     borderRadius: 12,
     width: 24,
     height: 24,
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     top: 17,
   },
   saveButton: {
-    backgroundColor: '#F5A623',
+    backgroundColor: '#F1C229',
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: 'center',

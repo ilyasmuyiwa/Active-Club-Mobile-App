@@ -23,7 +23,7 @@ export default function SettingsScreen() {
 
   const SettingsSection = ({ title, icon }: { title: string; icon: string }) => (
     <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
-      <IconSymbol name={icon as any} size={20} color="#F5A623" />
+      <IconSymbol name={icon as any} size={20} color="#F1C229" />
       <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
     </View>
   );
@@ -53,7 +53,7 @@ export default function SettingsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <IconSymbol name="gearshape.fill" size={24} color="#F5A623" />
+          <IconSymbol name="gearshape.fill" size={24} color="#F1C229" />
           <Text style={[styles.headerTitle, { color: colors.text }]}>Settings</Text>
         </View>
 
@@ -66,7 +66,7 @@ export default function SettingsScreen() {
               <Switch
                 value={emailNotifications}
                 onValueChange={setEmailNotifications}
-                trackColor={{ false: '#767577', true: '#F5A623' }}
+                trackColor={{ false: '#767577', true: '#F1C229' }}
                 thumbColor={emailNotifications ? '#FFF' : '#f4f3f4'}
               />
             }
@@ -78,7 +78,7 @@ export default function SettingsScreen() {
               <Switch
                 value={smsNotifications}
                 onValueChange={setSmsNotifications}
-                trackColor={{ false: '#767577', true: '#F5A623' }}
+                trackColor={{ false: '#767577', true: '#F1C229' }}
                 thumbColor={smsNotifications ? '#FFF' : '#f4f3f4'}
               />
             }

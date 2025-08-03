@@ -78,7 +78,7 @@ export default function NotificationsScreen() {
     if (type === 'achievement') {
       return (
         <View style={styles.achievementIcon}>
-          <IconSymbol name="star.fill" size={20} color="#F5A623" />
+          <IconSymbol name="star.fill" size={20} color="#F1C229" />
         </View>
       );
     }
@@ -128,7 +128,7 @@ export default function NotificationsScreen() {
                 {notification.title}
               </Text>
               <View style={styles.notificationMeta}>
-                <IconSymbol name="star.fill" size={12} color="#F5A623" />
+                <IconSymbol name="star.fill" size={12} color="#F1C229" />
                 <Text style={[styles.notificationTime, { color: colors.text }]}>
                   {notification.time}
                 </Text>
@@ -153,7 +153,7 @@ export default function NotificationsScreen() {
                 {notification.title}
               </Text>
               <View style={styles.notificationMeta}>
-                <IconSymbol name="star.fill" size={12} color="#F5A623" />
+                <IconSymbol name="star.fill" size={12} color="#F1C229" />
                 <Text style={[styles.notificationTime, { color: colors.text }]}>
                   {notification.time}
                 </Text>
@@ -177,7 +177,7 @@ export default function NotificationsScreen() {
                   {notification.title}
                 </Text>
                 <View style={styles.notificationMeta}>
-                  <IconSymbol name="star.fill" size={12} color="#F5A623" />
+                  <IconSymbol name="star.fill" size={12} color="#F1C229" />
                   <Text style={[styles.notificationTime, { color: colors.text }]}>
                     {notification.time}
                   </Text>
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   markAllText: {
-    color: '#F5A623',
+    color: '#F1C229',
     fontSize: 16,
     fontWeight: '500',
   },

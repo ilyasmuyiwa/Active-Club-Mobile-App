@@ -86,7 +86,7 @@ export default function HomeScreen() {
         <Defs>
           <SvgLinearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
             <Stop offset="0%" stopColor="#FFCE00" stopOpacity="0.7" />
-            <Stop offset="50%" stopColor="#F5A623" stopOpacity="0.9" />
+            <Stop offset="50%" stopColor="#F1C229" stopOpacity="0.9" />
             <Stop offset="100%" stopColor="#FF8C00" stopOpacity="1" />
           </SvgLinearGradient>
         </Defs>
@@ -112,15 +112,16 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F5A623" />
-      
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <LinearGradient 
+      colors={['#F1C229', '#FAD896', '#F5F5F5', '#F5F5F5']} 
+      locations={[0, 0.2, 0.4, 1]}
+      style={styles.container}>
+      <SafeAreaView style={{ flex: 1 }}>
+        <StatusBar barStyle="dark-content" backgroundColor="#F1C229" />
+        
+        <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header Section */}
-        <LinearGradient
-          colors={['#F5A623', '#F5A623']}
-          style={styles.headerSection}
-        >
+        <View style={styles.headerSection}>
           <View style={styles.header}>
             <View style={styles.profileInfo}>
               <TouchableOpacity 
@@ -189,13 +190,13 @@ export default function HomeScreen() {
                 
                 {/* Next Reward in bottom right */}
                 <View style={styles.nextRewardContainer}>
-                  <Text style={styles.nextRewardLabel}>Unlock Active Pro</Text>
+                  <Text style={styles.nextRewardLabel}>Unlock ActivePro</Text>
                   <Text style={styles.nextRewardValue}>{membershipData.points.toLocaleString()}/{membershipData.nextRewardTarget.toLocaleString()}</Text>
                 </View>
               </View>
             </LinearGradient>
           </View>
-        </LinearGradient>
+        </View>
 
         {/* Barcode Section */}
         <View style={styles.barcodeSection}>
@@ -211,7 +212,7 @@ export default function HomeScreen() {
         <View style={styles.activitiesSection}>
           <Text style={styles.sectionTitle}>Latest activities</Text>
           
-          {activities.map((activity, index) => (
+          {activities.map((activity) => (
             <View key={activity.id}>
               <Text style={styles.dateLabel}>{activity.date}</Text>
               <TouchableOpacity style={styles.activityCard}>
@@ -247,14 +248,14 @@ export default function HomeScreen() {
           ))}
         </View>
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
   },
   headerSection: {
     paddingTop: 20,
@@ -370,12 +371,12 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   pointsValue: {
-    color: '#F5A623',
+    color: '#F1C229',
     fontSize: 24,
     fontWeight: 'bold',
   },
   pointsLabel: {
-    color: '#F5A623',
+    color: '#F1C229',
     fontSize: 12,
     marginLeft: 3,
   },
@@ -390,12 +391,12 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   rewardAmount: {
-    color: '#F5A623',
+    color: '#F1C229',
     fontSize: 40,
     fontWeight: 'bold',
   },
   rewardCurrency: {
-    color: '#F5A623',
+    color: '#F1C229',
     fontSize: 16,
     marginLeft: 3,
   },

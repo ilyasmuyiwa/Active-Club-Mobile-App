@@ -94,6 +94,6 @@ active-club/
 - **Forms**: Proper form validation, keyboard handling, and user feedback
 - **Navigation**: Complete navigation flow between all screens with back buttons and proper routing
 - **Static Data**: Currently using comprehensive mock data for all dynamic content across all screens
-- **Design System**: Consistent theming following Adobe XD designs with #F5A623 (orange) as primary color
+- **Design System**: Consistent theming following Adobe XD designs with #F1C229 (yellow) as primary color
 - **Responsive**: All screens adapt to different device sizes and orientations
 - **UI/UX**: Proper loading states, animations, and user feedback throughout the app

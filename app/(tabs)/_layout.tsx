@@ -3,31 +3,35 @@ import React from 'react';
 import { Platform } from 'react-native';
 
 import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import TabIcon from '@/components/TabIcon';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#F5A623',
-        tabBarInactiveTintColor: '#999999',
+        tabBarActiveTintColor: '#F1C229',
+        tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.5)',
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '400',
+        },
         tabBarStyle: Platform.select({
           ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
+            backgroundColor: '#000000',
+            borderTopWidth: 0,
+            height: 85,
+            paddingBottom: 25,
+            paddingTop: 10,
           },
           default: {
-            backgroundColor: '#FFFFFF',
-            borderTopWidth: 1,
-            borderTopColor: '#E0E0E0',
+            backgroundColor: '#000000',
+            borderTopWidth: 0,
+            height: 70,
+            paddingBottom: 10,
+            paddingTop: 10,
           },
         }),
       }}>
@@ -35,28 +39,28 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarIcon: ({ color }) => <TabIcon icon="home" color={color} size={24} />,
         }}
       />
       <Tabs.Screen
         name="activities"
         options={{
           title: 'Activity',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="square.grid.2x2.fill" color={color} />,
+          tabBarIcon: ({ color }) => <TabIcon icon="activity" color={color} size={24} />,
         }}
       />
       <Tabs.Screen
         name="partners"
         options={{
           title: 'Partners',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="star.fill" color={color} />,
+          tabBarIcon: ({ color }) => <TabIcon icon="partners" color={color} size={24} />,
         }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
           title: 'Notifications',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="bell.fill" color={color} />,
+          tabBarIcon: ({ color }) => <TabIcon icon="notifications" color={color} size={24} />,
         }}
       />
     </Tabs>

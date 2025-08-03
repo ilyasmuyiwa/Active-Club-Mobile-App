@@ -87,7 +87,7 @@ export default function FaqScreen() {
                 <IconSymbol 
                   name="questionmark.circle.fill" 
                   size={20} 
-                  color="#F5A623" 
+                  color="#F1C229" 
                 />
                 <Text style={[styles.question, { color: colors.text }]}>
                   {item.question}

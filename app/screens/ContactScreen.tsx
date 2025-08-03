@@ -39,7 +39,7 @@ export default function ContactScreen() {
           style={[styles.contactOption, { backgroundColor: colors.card }]}
           onPress={handleCallSupport}
         >
-          <IconSymbol name="phone.fill" size={24} color="#F5A623" />
+          <IconSymbol name="phone.fill" size={24} color="#F1C229" />
           <Text style={[styles.optionText, { color: colors.text }]}>
             Reach our customer support
           </Text>
@@ -49,7 +49,7 @@ export default function ContactScreen() {
           style={[styles.contactOption, { backgroundColor: colors.card }]}
           onPress={handleGetInTouch}
         >
-          <IconSymbol name="envelope.fill" size={24} color="#F5A623" />
+          <IconSymbol name="envelope.fill" size={24} color="#F1C229" />
           <Text style={[styles.optionText, { color: colors.text }]}>
             Get in touch
           </Text>

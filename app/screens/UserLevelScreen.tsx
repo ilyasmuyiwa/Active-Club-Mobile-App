@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
@@ -96,7 +95,7 @@ export default function UserLevelScreen() {
         <Defs>
           <SvgLinearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
             <Stop offset="0%" stopColor="#FFCE00" stopOpacity="0.7" />
-            <Stop offset="50%" stopColor="#F5A623" stopOpacity="0.9" />
+            <Stop offset="50%" stopColor="#F1C229" stopOpacity="0.9" />
             <Stop offset="100%" stopColor="#FF8C00" stopOpacity="1" />
           </SvgLinearGradient>
         </Defs>
@@ -225,10 +224,10 @@ export default function UserLevelScreen() {
           </View>
           <View style={styles.progressDotsContainer}>
             <View style={styles.checkmarkContainer}>
-              <IconSymbol name="checkmark.circle.fill" size={24} color="#F5A623" />
+              <IconSymbol name="checkmark.circle.fill" size={24} color="#F1C229" />
             </View>
             <View style={styles.checkmarkContainer}>
-              <IconSymbol name="checkmark.circle.fill" size={24} color="#F5A623" />
+              <IconSymbol name="checkmark.circle.fill" size={24} color="#F1C229" />
             </View>
             <View style={styles.emptyDotContainer}>
               <View style={styles.emptyDot} />
@@ -247,7 +246,7 @@ export default function UserLevelScreen() {
           </Text>
           
           <View style={styles.workItem}>
-            <IconSymbol name="star.fill" size={24} color="#F5A623" />
+            <IconSymbol name="star.fill" size={24} color="#F1C229" />
             <Text style={[styles.workText, { color: colors.text }]}>
               Earned points for every order
             </Text>
@@ -371,7 +370,7 @@ const styles = StyleSheet.create({
   },
   pointsActivity: {
     fontSize: 14,
-    color: '#F5A623',
+    color: '#F1C229',
     textDecorationLine: 'underline',
   },
   pointsCard: {
@@ -428,11 +427,11 @@ const styles = StyleSheet.create({
   rewardValue: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: '#F5A623',
+    color: '#F1C229',
   },
   rewardCurrency: {
     fontSize: 18,
-    color: '#F5A623',
+    color: '#F1C229',
     marginLeft: 3,
   },
   rewardLabel: {
@@ -541,7 +540,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     height: 2,
-    backgroundColor: '#F5A623',
+    backgroundColor: '#F1C229',
     top: 11,
   },
   progressDotsContainer: {

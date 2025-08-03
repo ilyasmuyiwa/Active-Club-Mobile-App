@@ -15,7 +15,10 @@
       "Bash(expo doctor:*)",
       "Bash(npx expo doctor:*)",
       "Bash(npx:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(bun install:*)",
+      "Bash(claude-code:*)",
+      "Bash(cp:*)"
     ],
     "deny": []
   }

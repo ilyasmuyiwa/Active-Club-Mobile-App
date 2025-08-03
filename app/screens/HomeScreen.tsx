@@ -166,8 +166,12 @@ export default function HomeScreen() {
                   <View style={styles.arcContainer}>
                     <ProgressArc percentage={membershipData.progressPercentage} />
                     
-                    {/* Content Inside Arc */}
-                    <View style={styles.arcContent}>
+                    {/* Content Inside Arc - Tappable */}
+                    <TouchableOpacity 
+                      style={styles.arcContent}
+                      onPress={() => router.push('/user-level')}
+                      activeOpacity={0.8}
+                    >
                       <View style={styles.pointsInfo}>
                         <Text style={styles.pointsValue}>{membershipData.points.toLocaleString()}</Text>
                         <Text style={styles.pointsLabel}>pts</Text>
@@ -179,7 +183,7 @@ export default function HomeScreen() {
                         <Text style={styles.rewardCurrency}>QR</Text>
                       </View>
                       <Text style={styles.rewardLabel}>TOTAL REDEEMABLE REWARD</Text>
-                    </View>
+                    </TouchableOpacity>
                   </View>
                 </View>
                 

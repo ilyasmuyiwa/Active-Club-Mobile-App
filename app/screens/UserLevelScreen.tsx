@@ -12,6 +12,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
+import Svg, { Defs, Path, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 
 interface LevelTier {
   id: string;
@@ -58,32 +59,83 @@ const currentUserData = {
   currentReward: 736,
   currentLevel: 'ActiveFit',
   expiryDate: '03/2025',
+  progressPercentage: (22426 / 25000) * 100, // ~90%
 };
 
 export default function UserLevelScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
-  const LevelCard = ({ level }: { level: LevelTier }) => (
-    <TouchableOpacity 
-      style={[
-        styles.levelCard,
-        { 
-          backgroundColor: colors.card,
-          borderColor: level.isActive ? '#F5A623' : 'transparent',
-          borderWidth: level.isActive ? 2 : 0,
-        }
-      ]}
-    >
-      <View style={[styles.levelIcon, { backgroundColor: level.color + '20' }]}>
-        <MaterialCommunityIcons 
-          name={level.icon as any} 
-          size={32} 
-          color={level.color} 
+  // Progress Arc Component - Same as HomePage
+  const ProgressArc = ({ percentage }: { percentage: number }) => {
+    const size = 220;
+    const strokeWidth = 6;
+    const radius = (size - strokeWidth) / 2;
+    const startAngle = -210; // Start at -210 degrees (7:30 position)
+    const endAngle = 30; // End at 30 degrees (4:30 position)
+    const totalAngle = 240; // Total arc span in degrees
+    
+    // Convert angles to radians
+    const startAngleRad = (startAngle * Math.PI) / 180;
+    const endAngleRad = (endAngle * Math.PI) / 180;
+    
+    // Calculate arc endpoints
+    const startX = size / 2 + radius * Math.cos(startAngleRad);
+    const startY = size / 2 + radius * Math.sin(startAngleRad);
+    const endX = size / 2 + radius * Math.cos(endAngleRad);
+    const endY = size / 2 + radius * Math.sin(endAngleRad);
+    
+    // Calculate progress endpoint
+    const progressAngle = startAngle + (totalAngle * percentage) / 100;
+    const progressAngleRad = (progressAngle * Math.PI) / 180;
+    const progressX = size / 2 + radius * Math.cos(progressAngleRad);
+    const progressY = size / 2 + radius * Math.sin(progressAngleRad);
+
+    return (
+      <Svg width={size} height={size * 0.75}>
+        <Defs>
+          <SvgLinearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <Stop offset="0%" stopColor="#FFCE00" stopOpacity="0.7" />
+            <Stop offset="50%" stopColor="#F5A623" stopOpacity="0.9" />
+            <Stop offset="100%" stopColor="#FF8C00" stopOpacity="1" />
+          </SvgLinearGradient>
+        </Defs>
+        
+        {/* Background Arc - 240 degrees */}
+        <Path
+          d={`M ${startX} ${startY} A ${radius} ${radius} 0 1 1 ${endX} ${endY}`}
+          fill="none"
+          stroke="#E0E0E0"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
         />
-      </View>
-      
-      <View style={styles.levelInfo}>
+        {/* Progress Arc with gradient */}
+        <Path
+          d={`M ${startX} ${startY} A ${radius} ${radius} 0 ${percentage > 50 ? 1 : 0} 1 ${progressX} ${progressY}`}
+          fill="none"
+          stroke="url(#progressGradient)"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+        />
+      </Svg>
+    );
+  };
+
+  const LevelCard = ({ level }: { level: LevelTier }) => {
+    const levelNumber = level.name === 'ActiveGo' ? '3' : level.name === 'ActiveFit' ? '2' : '1';
+    
+    return (
+      <View style={styles.levelCard}>
+        <View style={styles.levelHexagonContainer}>
+          <View style={[styles.levelHexagon, { backgroundColor: level.color }]}>
+            <View style={styles.levelHexagonInner}>
+              <Text style={styles.levelHexagonText}>{levelNumber}</Text>
+            </View>
+            <View style={[styles.levelHexagonBefore, { borderBottomColor: level.color }]} />
+            <View style={[styles.levelHexagonAfter, { borderTopColor: level.color }]} />
+          </View>
+        </View>
+        
         <Text style={[styles.levelName, { color: colors.text }]}>
           {level.name}
         </Text>
@@ -91,21 +143,9 @@ export default function UserLevelScreen() {
           {level.points}
         </Text>
       </View>
-    </TouchableOpacity>
-  );
+    );
+  };
 
-  const ProgressBar = () => (
-    <View style={styles.progressContainer}>
-      <View style={styles.progressBar}>
-        <View style={[styles.progressFill, { width: '60%' }]} />
-      </View>
-      <View style={styles.progressDots}>
-        <View style={[styles.dot, styles.completedDot]} />
-        <View style={[styles.dot, styles.activeDot]} />
-        <View style={[styles.dot, styles.inactiveDot]} />
-      </View>
-    </View>
-  );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -125,12 +165,14 @@ export default function UserLevelScreen() {
         {/* Current Level Status */}
         <View style={[styles.statusCard, { backgroundColor: colors.card }]}>
           <View style={styles.statusHeader}>
-            <View style={styles.statusIcon}>
-              <MaterialCommunityIcons 
-                name="numeric-2-circle" 
-                size={32} 
-                color="#9E9E9E" 
-              />
+            <View style={styles.hexagonContainer}>
+              <View style={styles.hexagon}>
+                <View style={styles.hexagonInner}>
+                  <Text style={styles.hexagonText}>2</Text>
+                </View>
+                <View style={styles.hexagonBefore} />
+                <View style={styles.hexagonAfter} />
+              </View>
             </View>
             <View style={styles.statusInfo}>
               <Text style={[styles.statusLabel, { color: colors.icon }]}>
@@ -146,18 +188,25 @@ export default function UserLevelScreen() {
           </View>
         </View>
 
-        {/* Points Circle */}
-        <View style={styles.pointsSection}>
-          <View style={styles.pointsCircle}>
-            <Text style={styles.pointsValue}>{currentUserData.currentPoints.toLocaleString()}</Text>
-            <Text style={styles.pointsUnit}>pts</Text>
-            <Text style={styles.expiryText}>500pts expiring on {currentUserData.expiryDate}</Text>
-          </View>
-          
-          <View style={styles.rewardDisplay}>
-            <Text style={styles.rewardValue}>{currentUserData.currentReward}</Text>
-            <Text style={styles.rewardCurrency}>QR</Text>
-            <Text style={styles.rewardLabel}>TOTAL REDEEMABLE REWARD</Text>
+        {/* Points Arc Section */}
+        <View style={[styles.pointsCard, { backgroundColor: colors.card }]}>
+          <View style={styles.arcContainer}>
+            <ProgressArc percentage={currentUserData.progressPercentage} />
+            
+            {/* Content Inside Arc */}
+            <View style={styles.arcContent}>
+              <View style={styles.pointsInfo}>
+                <Text style={styles.pointsValue}>{currentUserData.currentPoints.toLocaleString()}</Text>
+                <Text style={styles.pointsLabel}>pts</Text>
+              </View>
+              <Text style={styles.expiryText}>500pts expiring on {currentUserData.expiryDate}</Text>
+              
+              <View style={styles.rewardInfo}>
+                <Text style={styles.rewardValue}>{currentUserData.currentReward}</Text>
+                <Text style={styles.rewardCurrency}>QR</Text>
+              </View>
+              <Text style={styles.rewardLabel}>TOTAL REDEEMABLE REWARD</Text>
+            </View>
           </View>
         </View>
 
@@ -168,7 +217,24 @@ export default function UserLevelScreen() {
           ))}
         </View>
 
-        <ProgressBar />
+        {/* Progress Bar with dots */}
+        <View style={styles.progressSection}>
+          <View style={styles.progressLineContainer}>
+            <View style={styles.progressLine} />
+            <View style={[styles.progressLineFill, { width: '60%' }]} />
+          </View>
+          <View style={styles.progressDotsContainer}>
+            <View style={styles.checkmarkContainer}>
+              <IconSymbol name="checkmark.circle.fill" size={24} color="#F5A623" />
+            </View>
+            <View style={styles.checkmarkContainer}>
+              <IconSymbol name="checkmark.circle.fill" size={24} color="#F5A623" />
+            </View>
+            <View style={styles.emptyDotContainer}>
+              <View style={styles.emptyDot} />
+            </View>
+          </View>
+        </View>
 
         <Text style={[styles.disclaimerText, { color: colors.icon }]}>
           Redeeming points has no effect on your level advancement
@@ -237,6 +303,60 @@ const styles = StyleSheet.create({
   statusIcon: {
     marginRight: 15,
   },
+  hexagonContainer: {
+    marginRight: 15,
+    width: 50,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hexagon: {
+    width: 40,
+    height: 22,
+    backgroundColor: '#C4C4C4',
+    position: 'relative',
+    marginVertical: 9,
+  },
+  hexagonInner: {
+    width: 40,
+    height: 22,
+    backgroundColor: '#C4C4C4',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  hexagonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  hexagonBefore: {
+    position: 'absolute',
+    top: -9,
+    left: 0,
+    width: 0,
+    height: 0,
+    borderStyle: 'solid',
+    borderLeftWidth: 20,
+    borderLeftColor: 'transparent',
+    borderRightWidth: 20,
+    borderRightColor: 'transparent',
+    borderBottomWidth: 9,
+    borderBottomColor: '#C4C4C4',
+  },
+  hexagonAfter: {
+    position: 'absolute',
+    bottom: -9,
+    left: 0,
+    width: 0,
+    height: 0,
+    borderStyle: 'solid',
+    borderLeftWidth: 20,
+    borderLeftColor: 'transparent',
+    borderRightWidth: 20,
+    borderRightColor: 'transparent',
+    borderTopWidth: 9,
+    borderTopColor: '#C4C4C4',
+  },
   statusInfo: {
     flex: 1,
   },
@@ -254,66 +374,10 @@ const styles = StyleSheet.create({
     color: '#F5A623',
     textDecorationLine: 'underline',
   },
-  pointsSection: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  pointsCircle: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    borderWidth: 8,
-    borderColor: '#F5A623',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  pointsValue: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#F5A623',
-  },
-  pointsUnit: {
-    fontSize: 14,
-    color: '#F5A623',
-    marginTop: -5,
-  },
-  expiryText: {
-    fontSize: 10,
-    color: '#999',
-    textAlign: 'center',
-    marginTop: 5,
-  },
-  rewardDisplay: {
-    alignItems: 'center',
-  },
-  rewardValue: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#F5A623',
-  },
-  rewardCurrency: {
-    fontSize: 16,
-    color: '#F5A623',
-    marginTop: -10,
-  },
-  rewardLabel: {
-    fontSize: 10,
-    color: '#999',
-    marginTop: 5,
-  },
-  levelsSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  levelCard: {
-    width: '30%',
-    aspectRatio: 1,
+  pointsCard: {
     borderRadius: 12,
-    padding: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 20,
+    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -323,6 +387,71 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
+  arcContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  arcContent: {
+    position: 'absolute',
+    top: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 250,
+  },
+  pointsInfo: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 2,
+  },
+  pointsValue: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  pointsLabel: {
+    fontSize: 14,
+    color: '#333',
+    marginLeft: 3,
+    textTransform: 'lowercase',
+  },
+  expiryText: {
+    fontSize: 10,
+    color: '#999',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  rewardInfo: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  rewardValue: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#F5A623',
+  },
+  rewardCurrency: {
+    fontSize: 18,
+    color: '#F5A623',
+    marginLeft: 3,
+  },
+  rewardLabel: {
+    fontSize: 10,
+    color: '#999',
+    marginTop: 5,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  levelsSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 30,
+    paddingHorizontal: 10,
+  },
+  levelCard: {
+    alignItems: 'center',
+    width: '30%',
+  },
   levelIcon: {
     width: 50,
     height: 50,
@@ -331,8 +460,55 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  levelInfo: {
+  levelHexagonContainer: {
+    marginBottom: 10,
+    width: 60,
+    height: 60,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  levelHexagon: {
+    width: 46,
+    height: 26,
+    position: 'relative',
+    marginVertical: 10,
+  },
+  levelHexagonInner: {
+    width: 46,
+    height: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  levelHexagonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  levelHexagonBefore: {
+    position: 'absolute',
+    top: -10,
+    left: 0,
+    width: 0,
+    height: 0,
+    borderStyle: 'solid',
+    borderLeftWidth: 23,
+    borderLeftColor: 'transparent',
+    borderRightWidth: 23,
+    borderRightColor: 'transparent',
+    borderBottomWidth: 10,
+  },
+  levelHexagonAfter: {
+    position: 'absolute',
+    bottom: -10,
+    left: 0,
+    width: 0,
+    height: 0,
+    borderStyle: 'solid',
+    borderLeftWidth: 23,
+    borderLeftColor: 'transparent',
+    borderRightWidth: 23,
+    borderRightColor: 'transparent',
+    borderTopWidth: 10,
   },
   levelName: {
     fontSize: 14,
@@ -344,37 +520,48 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: 'center',
   },
-  progressContainer: {
+  progressSection: {
     marginBottom: 20,
+    paddingHorizontal: 20,
   },
-  progressBar: {
+  progressLineContainer: {
+    position: 'relative',
     height: 4,
+    marginBottom: -12,
+  },
+  progressLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 2,
     backgroundColor: '#E0E0E0',
-    borderRadius: 2,
-    marginBottom: 10,
+    top: 11,
   },
-  progressFill: {
-    height: '100%',
+  progressLineFill: {
+    position: 'absolute',
+    left: 0,
+    height: 2,
     backgroundColor: '#F5A623',
-    borderRadius: 2,
+    top: 11,
   },
-  progressDots: {
+  progressDotsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 5,
   },
-  dot: {
+  checkmarkContainer: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+  },
+  emptyDotContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 24,
+    height: 24,
+  },
+  emptyDot: {
     width: 12,
     height: 12,
     borderRadius: 6,
-  },
-  completedDot: {
-    backgroundColor: '#F5A623',
-  },
-  activeDot: {
-    backgroundColor: '#F5A623',
-  },
-  inactiveDot: {
     backgroundColor: '#E0E0E0',
   },
   disclaimerText: {

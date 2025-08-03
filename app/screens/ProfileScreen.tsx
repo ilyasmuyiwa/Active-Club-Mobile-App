@@ -48,33 +48,17 @@ export default function ProfileScreen() {
       >
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.profileSection}>
-            <View style={styles.profileImageContainer}>
+            <TouchableOpacity 
+              style={styles.profileImageContainer}
+              onPress={() => Alert.alert('Info', 'Profile picture change coming soon!')}
+            >
               <Image
                 source={{ uri: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face' }}
                 style={styles.profileImage}
               />
-              <TouchableOpacity 
-                onPress={() => {
-                  console.log('Profile image overlay pressed!');
-                  router.push('/user-level');
-                }}
-                activeOpacity={0.8}
-                style={styles.imageOverlay}
-              />
               <View style={styles.editIconContainer}>
                 <IconSymbol name="camera.fill" size={16} color="white" />
               </View>
-            </View>
-
-            {/* Test button to verify navigation works */}
-            <TouchableOpacity 
-              style={styles.testButton}
-              onPress={() => {
-                console.log('Test button pressed!');
-                router.push('/user-level');
-              }}
-            >
-              <Text style={styles.testButtonText}>Test: Go to User Level</Text>
             </TouchableOpacity>
             
             <View style={styles.customerInfo}>
@@ -241,28 +225,11 @@ const styles = StyleSheet.create({
   profileImageContainer: {
     position: 'relative',
     marginBottom: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 10,
-    backgroundColor: 'rgba(245, 166, 35, 0.1)',
-    borderRadius: 50,
-  },
-  imageWrapper: {
-    borderRadius: 40,
   },
   profileImage: {
     width: 80,
     height: 80,
     borderRadius: 40,
-  },
-  imageOverlay: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    right: 10,
-    bottom: 10,
-    borderRadius: 40,
-    backgroundColor: 'transparent',
   },
   editIconContainer: {
     position: 'absolute',
@@ -335,18 +302,5 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: '600',
-  },
-  testButton: {
-    backgroundColor: '#F5A623',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    marginVertical: 10,
-  },
-  testButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
   },
 });

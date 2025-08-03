@@ -1,26 +1,29 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  StatusBar,
+  Alert,
   Dimensions,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
-  Alert
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 
 const { width, height } = Dimensions.get('window');
 
 const OTPScreen: React.FC = () => {
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otp, setOtp] = useState(['', '', '', '', '']);
   const [timer, setTimer] = useState(120); // 2 minutes
   const [canResend, setCanResend] = useState(false);
   const router = useRouter();
+  const { phoneNumber } = useLocalSearchParams<{ phoneNumber: string }>();
   
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
@@ -45,7 +48,7 @@ const OTPScreen: React.FC = () => {
     setOtp(newOtp);
 
     // Auto-focus next input
-    if (value && index < 5) {
+    if (value && index < 4) {
       inputRefs.current[index + 1]?.focus();
     }
 
@@ -64,17 +67,23 @@ const OTPScreen: React.FC = () => {
   const handleVerify = (otpCode?: string) => {
     const finalOtp = otpCode || otp.join('');
     
-    if (finalOtp.length === 6) {
+    if (finalOtp.length === 5) {
       // Simulate OTP verification
-      if (finalOtp === '123456') {
+      if (finalOtp === '12345') {
         // User exists, go to home
         router.replace('/(tabs)');
-      } else if (finalOtp === '654321') {
+      } else if (finalOtp === '54321') {
         // New user, go to registration
-        router.push('/screens/RegistrationScreen');
+        router.push({
+          pathname: '/screens/RegistrationScreen',
+          params: { phoneNumber: phoneNumber }
+        });
       } else {
         // Demo purposes - any other code goes to registration
-        router.push('/screens/RegistrationScreen');
+        router.push({
+          pathname: '/screens/RegistrationScreen',
+          params: { phoneNumber: phoneNumber }
+        });
       }
     } else {
       Alert.alert('Error', 'Please enter the complete OTP');
@@ -85,7 +94,7 @@ const OTPScreen: React.FC = () => {
     if (canResend) {
       setTimer(120);
       setCanResend(false);
-      setOtp(['', '', '', '', '', '']);
+      setOtp(['', '', '', '', '']);
       inputRefs.current[0]?.focus();
       Alert.alert('OTP Sent', 'A new OTP has been sent to your phone');
     }
@@ -98,11 +107,12 @@ const OTPScreen: React.FC = () => {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <StatusBar barStyle="dark-content" />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView 
+        style={styles.container} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <StatusBar barStyle="dark-content" />
       
       <View style={styles.header}>
         <TouchableOpacity 
@@ -117,8 +127,8 @@ const OTPScreen: React.FC = () => {
       <View style={styles.content}>
         <Text style={styles.title}>OTP Verification Code</Text>
         <Text style={styles.subtitle}>
-          Please enter the OTP verification code that was{'\n'}
-          sent to +974 XXXX XXXX
+          Please enter the OTP verification code sent to your
+          mobile number {'\n'} {phoneNumber || '+974 XXXX XXXX'}
         </Text>
 
         <View style={styles.otpContainer}>
@@ -150,26 +160,27 @@ const OTPScreen: React.FC = () => {
           disabled={!canResend}
         >
           <Text style={[styles.resendText, !canResend && styles.resendTextDisabled]}>
-            Didn't receive the OTP? <Text style={styles.resendLink}>Resend OTP</Text>
+            Didn't receive the OTP? <Text style={[styles.resendLink, !canResend && styles.resendLinkDisabled]}>Resend OTP</Text>
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={[styles.verifyButton, otp.join('').length !== 6 && styles.verifyButtonDisabled]}
+          style={[styles.verifyButton, otp.join('').length !== 5 && styles.verifyButtonDisabled]}
           onPress={() => handleVerify()}
-          disabled={otp.join('').length !== 6}
+          disabled={otp.join('').length !== 5}
         >
-          <Text style={styles.verifyButtonText}>Verify</Text>
+          <Text style={styles.verifyButtonText}>Submit</Text>
         </TouchableOpacity>
       </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F5F5',
   },
   header: {
     flexDirection: 'row',
@@ -177,6 +188,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
+    backgroundColor: '#FFFFFF',
   },
   backButton: {
     marginRight: 15,
@@ -190,7 +202,8 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 30,
-    paddingTop: 40,
+    justifyContent: 'center',
+    backgroundColor: '#F5F5F5',
   },
   title: {
     fontSize: 24,
@@ -202,7 +215,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#666666',
+    color: '#000000',
     textAlign: 'center',
     marginBottom: 40,
     lineHeight: 22,
@@ -210,33 +223,33 @@ const styles = StyleSheet.create({
   },
   otpContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    gap: 15,
     marginBottom: 30,
-    paddingHorizontal: 20,
   },
   otpInput: {
-    width: 45,
-    height: 55,
-    borderWidth: 1,
+    width: 60,
+    height: 60,
+    borderWidth: 2,
     borderColor: '#E0E0E0',
     borderRadius: 8,
     textAlign: 'center',
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#000000',
-    backgroundColor: '#F9F9F9',
+    backgroundColor: '#FFFFFF',
     fontFamily: 'Roboto',
   },
   otpInputFilled: {
-    borderColor: '#F1C229',
-    backgroundColor: '#FFFBF0',
+    borderColor: '#4CAF50',
+    color: '#4CAF50',
   },
   timerText: {
-    fontSize: 16,
-    color: '#F1C229',
+    fontSize: 20,
+    color: '#000000',
     textAlign: 'center',
     marginBottom: 20,
-    fontWeight: '600',
+    fontWeight: 'bold',
     fontFamily: 'Roboto',
   },
   resendButton: {
@@ -247,7 +260,7 @@ const styles = StyleSheet.create({
   },
   resendText: {
     fontSize: 14,
-    color: '#666666',
+    color: '#000000',
     textAlign: 'center',
     fontFamily: 'Roboto',
   },
@@ -255,16 +268,21 @@ const styles = StyleSheet.create({
     color: '#CCCCCC',
   },
   resendLink: {
-    color: '#F1C229',
+    color: '#000000',
     fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
+  resendLinkDisabled: {
+    color: '#CCCCCC',
+    textDecorationLine: 'none',
   },
   verifyButton: {
     backgroundColor: '#F1C229',
-    paddingVertical: 15,
+    paddingVertical: 16,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 'auto',
-    marginBottom: 50,
+    marginHorizontal: 20,
+    marginTop: 20,
   },
   verifyButtonDisabled: {
     backgroundColor: 'rgba(241, 194, 41, 0.3)',

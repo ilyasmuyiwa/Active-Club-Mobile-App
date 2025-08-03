@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, StatusBar, Animated } from 'react-native';
-import { SvgXml } from 'react-native-svg';
 import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Animated, StatusBar, StyleSheet, View } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 import { ActiveClubLogoSvg } from '../../assets/ActiveClubLogo';
 import { RewardingTheActiveSvg } from '../../assets/RewardingTheActive';
 
@@ -15,10 +15,10 @@ const SplashScreen: React.FC = () => {
   const textOpacity = new Animated.Value(0);
 
   useEffect(() => {
-    // Phase 1: Show loading bar animation for 2 seconds
+    // Phase 1: Show loading bar animation for 1 second
     Animated.timing(loadingProgress, {
       toValue: 1,
-      duration: 2000,
+      duration: 1000,
       useNativeDriver: false,
     }).start();
 
@@ -36,7 +36,7 @@ const SplashScreen: React.FC = () => {
         }),
         Animated.timing(logoOpacity, {
           toValue: 1,
-          duration: 600,
+          duration: 300,
           useNativeDriver: true,
         }),
       ]).start(() => {
@@ -51,18 +51,18 @@ const SplashScreen: React.FC = () => {
             }),
             Animated.timing(textOpacity, {
               toValue: 1,
-              duration: 500,
+              duration: 300,
               useNativeDriver: true,
             }),
           ]).start();
-        }, 300);
+        }, 150);
       });
-    }, 2000);
+    }, 1000);
 
-    // Phase 3: Navigate to login after total 4.5 seconds
+    // Phase 3: Navigate to login after total 3 seconds
     const timer2 = setTimeout(() => {
       router.replace('/screens/LoginScreen');
-    }, 4500);
+    }, 4000);
 
     return () => {
       clearTimeout(timer1);

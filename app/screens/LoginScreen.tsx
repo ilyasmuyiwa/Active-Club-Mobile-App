@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dimensions,
   Image,
@@ -12,7 +12,8 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Keyboard,
-  View
+  View,
+  Animated
 } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { ActiveClubLogoSvg } from '../../assets/ActiveClubLogo';
@@ -21,11 +22,77 @@ const { height, width } = Dimensions.get('window');
 
 const LoginScreen: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [isValidNumber, setIsValidNumber] = useState(false);
   const router = useRouter();
+  
+  // Animation values
+  const logoAnimatedValue = useRef(new Animated.Value(-100)).current;
+  const formAnimatedValue = useRef(new Animated.Value(height)).current;
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Animate logo sliding down from top
+    Animated.parallel([
+      Animated.spring(logoAnimatedValue, {
+        toValue: 0,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+      Animated.timing(logoOpacity, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Animate form sliding up from bottom
+    setTimeout(() => {
+      Animated.spring(formAnimatedValue, {
+        toValue: 0,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }).start();
+    }, 300);
+  }, []);
+
+  const handlePhoneNumberChange = (text: string) => {
+    // Remove all non-numeric characters and spaces
+    const numericOnly = text.replace(/[^0-9]/g, '');
+    
+    // If empty, just set empty
+    if (numericOnly === '') {
+      setPhoneNumber('');
+      setIsValidNumber(false);
+      return;
+    }
+    
+    // If user is typing and doesn't start with 974, auto-add +974 with space
+    let formattedNumber = '';
+    if (numericOnly.startsWith('974')) {
+      const remainingDigits = numericOnly.substring(3);
+      formattedNumber = remainingDigits ? `+974 ${remainingDigits}` : '+974';
+    } else {
+      formattedNumber = `+974 ${numericOnly}`;
+    }
+    
+    // Limit to 13 characters total (+974 xxxxxxxx = 13 chars)
+    if (formattedNumber.length <= 13) {
+      setPhoneNumber(formattedNumber);
+      
+      // Check if it's a valid Qatar number (8 digits after +974 )
+      const digitsAfter974 = formattedNumber.replace('+974 ', '');
+      setIsValidNumber(digitsAfter974.length === 8);
+    }
+  };
 
   const handleLogin = () => {
-    if (phoneNumber.trim()) {
-      router.push('/screens/OTPScreen');
+    if (isValidNumber) {
+      router.push({
+        pathname: '/screens/OTPScreen',
+        params: { phoneNumber: phoneNumber }
+      });
     }
   };
 
@@ -45,37 +112,62 @@ const LoginScreen: React.FC = () => {
           style={styles.contentContainer}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          {/* Logo at top */}
-          <View style={styles.logoContainer}>
+          {/* Logo at top with animation */}
+          <Animated.View 
+            style={[
+              styles.logoContainer,
+              {
+                opacity: logoOpacity,
+                transform: [{ translateY: logoAnimatedValue }]
+              }
+            ]}
+          >
             <SvgXml xml={ActiveClubLogoSvg} width={140} height={56} />
-          </View>
+          </Animated.View>
 
           {/* Spacer to push form down */}
           <View style={styles.spacer} />
 
-          {/* Login Form */}
-          <View style={styles.formContainer}>
+          {/* Login Form with slide up animation */}
+          <Animated.View 
+            style={[
+              styles.formContainer,
+              {
+                transform: [{ translateY: formAnimatedValue }]
+              }
+            ]}
+          >
             <Text style={styles.title}>Login</Text>
             
-            <TextInput
-              style={styles.input}
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
-              placeholder="Mobile number"
-              placeholderTextColor="#999999"
-              keyboardType="phone-pad"
-              returnKeyType="done"
-              onSubmitEditing={handleLogin}
-            />
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[
+                  styles.input,
+                  isValidNumber && styles.inputValid
+                ]}
+                value={phoneNumber}
+                onChangeText={handlePhoneNumberChange}
+                placeholder="+974 Mobile number"
+                placeholderTextColor="#999999"
+                keyboardType="phone-pad"
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
+              />
+              {isValidNumber && (
+                <View style={styles.checkmarkContainer}>
+                  <Text style={styles.checkmark}>✓</Text>
+                </View>
+              )}
+            </View>
 
             <TouchableOpacity 
-              style={[styles.button, !phoneNumber.trim() && styles.buttonDisabled]}
+              style={[styles.button, !isValidNumber && styles.buttonDisabled]}
               onPress={handleLogin}
-              disabled={!phoneNumber.trim()}
+              disabled={!isValidNumber}
             >
               <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         </KeyboardAvoidingView>
       </View>
     </TouchableWithoutFeedback>
@@ -116,23 +208,49 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     textAlign: 'left',
   },
+  inputContainer: {
+    position: 'relative',
+    marginBottom: 20,
+  },
   input: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 6,
     padding: 18,
+    paddingRight: 50,
     fontSize: 16,
     color: '#000000',
-    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: 'transparent',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
+  inputValid: {
+    borderColor: '#4CAF50',
+  },
+  checkmarkContainer: {
+    position: 'absolute',
+    right: 15,
+    top: '50%',
+    transform: [{ translateY: -12 }],
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#4CAF50',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkmark: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   button: {
     backgroundColor: '#F1C229',
     paddingVertical: 18,
-    borderRadius: 12,
+    borderRadius: 6,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

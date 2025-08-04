@@ -1,0 +1,20 @@
+export const LiningIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="63.721" height="24.964" viewBox="0 0 63.721 24.964">
+  <defs>
+    <clipPath id="clip-path">
+      <rect id="Rectangle_991" data-name="Rectangle 991" width="63.721" height="24.964"/>
+    </clipPath>
+  </defs>
+  <g id="Group_6484" data-name="Group 6484" transform="translate(0 0)">
+    <g id="Group_6483" data-name="Group 6483" transform="translate(0 -0.001)" clip-path="url(#clip-path)">
+      <path id="Path_6606" data-name="Path 6606" d="M5.235,29.523H2.462L0,36.795a18.827,18.827,0,0,0,10.328.142l1.245-3.056H8.8l-.4,1.16a8.952,8.952,0,0,1-5.206.17Z" transform="translate(0 -12.601)" fill="currentColor"/>
+      <path id="Path_6607" data-name="Path 6607" d="M19.648,37.3h2.744l2.773-7.781H22.407Z" transform="translate(-8.386 -12.601)" fill="currentColor"/>
+      <path id="Path_6608" data-name="Path 6608" d="M29.275,36.589H34.2L35.1,34.41h-4.98Z" transform="translate(-12.495 -14.687)" fill="currentColor"/>
+      <path id="Path_6609" data-name="Path 6609" d="M39.444,37.3H42.1L44,31.787s3,1.16,3.961,3.084L47.2,37.3h2.66L52.4,29.524h-2.66l-.877,2.8a13.354,13.354,0,0,0-4.074-2.66H42.1Z" transform="translate(-16.836 -12.601)" fill="currentColor"/>
+      <path id="Path_6610" data-name="Path 6610" d="M68.094,37.3h2.66l1.9-5.517s3,1.16,3.961,3.084L75.847,37.3h2.66l2.547-7.781h-2.66l-.878,2.8a13.354,13.354,0,0,0-4.074-2.66H70.754Z" transform="translate(-29.064 -12.601)" fill="currentColor"/>
+      <path id="Path_6611" data-name="Path 6611" d="M63.1,37.3H60.326L63.1,29.524h2.547Z" transform="translate(-25.748 -12.601)" fill="currentColor"/>
+      <path id="Path_6612" data-name="Path 6612" d="M89.007,36.568l2.405-6.819a15.644,15.644,0,0,1,10.3.113l-.792,2.066s-1.981-1.245-7.555-.4l-1.075,3.4a8.222,8.222,0,0,0,5.093.028l.368-1.1a19.16,19.16,0,0,0-3-.113l.609-1.783s3.381-.455,5.39.791l-1.387,3.821s-3.707,1.669-10.356,0" transform="translate(-37.99 -12.346)" fill="currentColor"/>
+      <path id="Path_6613" data-name="Path 6613" d="M15.971,13.895H13.749L24.9,1.989S25.907.605,30.141.186s3.941,0,3.941,0S25.319,3.707,15.971,13.895" transform="translate(-5.868 0)" fill="currentColor"/>
+      <path id="Path_6614" data-name="Path 6614" d="M19.162,16.451a7.185,7.185,0,0,0,4.15-1.049s7.463-5.646,13.47-4.52a43.83,43.83,0,0,1,11.294,3.993s3.825,2.184,7.409.955,13-6.328,13-6.328S61.355,7.81,54.8,6.923s-19.351-1.5-22.458-.137-8.379,4.96-13.183,9.664" transform="translate(-8.179 -2.555)" fill="currentColor"/>
+    </g>
+  </g>
+</svg>`;

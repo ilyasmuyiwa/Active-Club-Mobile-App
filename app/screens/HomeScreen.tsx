@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -57,10 +58,10 @@ export default function HomeScreen() {
       setLoading(true);
       setError(null);
       
-      // Fetch customer data and transactions in parallel
-      const [customerData, transactionData] = await Promise.all([
+      // Fetch customer data and limited transactions in parallel
+      const [customerData, transactionResult] = await Promise.all([
         capillaryApi.getCustomerByMobile(userMobile),
-        capillaryApi.getCustomerTransactionsByMobile(userMobile)
+        capillaryApi.getCustomerTransactionsPaginated(userMobile, 5, 0)
       ]);
       
       if (customerData) {
@@ -69,8 +70,8 @@ export default function HomeScreen() {
         setError('Customer not found');
       }
       
-      if (transactionData && transactionData.length > 0) {
-        setTransactions(transactionData);
+      if (transactionResult.transactions && transactionResult.transactions.length > 0) {
+        setTransactions(transactionResult.transactions);
       } else {
         setTransactions([]);
       }
@@ -243,10 +244,9 @@ export default function HomeScreen() {
                 onPress={() => router.push('/profile')}
                 activeOpacity={0.7}
               >
-                <Image
-                  source={{ uri: 'https://i.pravatar.cc/100?img=3' }}
-                  style={styles.avatar}
-                />
+                <View style={styles.avatar}>
+                  <IconSymbol name="person.fill" size={24} color="#666" />
+                </View>
               </TouchableOpacity>
               <View style={styles.welcomeText}>
                 <Text style={styles.welcomeLabel}>Welcome back,</Text>
@@ -319,8 +319,8 @@ export default function HomeScreen() {
                 {/* Next Reward in bottom right */}
                 <View style={styles.nextRewardContainer}>
                   <Text style={styles.nextRewardLabel}>{
-                    membershipData.tier === 'ActiveGo' ? 'Unlock ActiveFit' :
-                    membershipData.tier === 'ActiveFit' ? 'Unlock ActivePro' :
+                    membershipData.tier === 'Go' ? 'Unlock ActiveFit' :
+                    membershipData.tier === 'Fit' ? 'Unlock ActivePro' :
                     'ActivePro Member'
                   }</Text>
                   <Text style={styles.nextRewardValue}>{membershipData.points.toLocaleString()}/{membershipData.nextRewardTarget.toLocaleString()}</Text>
@@ -410,6 +410,18 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
           ))}
+          
+          {/* Load More Link */}
+          {activities.length > 0 && (
+            <TouchableOpacity 
+              style={styles.loadMoreContainer}
+              onPress={() => router.push('/activities')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.loadMoreText}>View all activities</Text>
+              <Ionicons name="chevron-forward" size={16} color="#F1C229" />
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
       </SafeAreaView>
@@ -484,6 +496,9 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 25,
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   welcomeText: {
     justifyContent: 'center',
@@ -744,6 +759,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#F44336',
     marginTop: 2,
+  },
+  loadMoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 15,
+    marginTop: 10,
+    backgroundColor: 'rgba(241, 194, 41, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(241, 194, 41, 0.3)',
+  },
+  loadMoreText: {
+    fontSize: 14,
+    color: '#F1C229',
+    fontWeight: '600',
+    marginRight: 6,
   },
   loadingContainer: {
     flex: 1,

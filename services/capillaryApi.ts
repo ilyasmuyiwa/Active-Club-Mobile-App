@@ -1,6 +1,9 @@
 // Capillary API Service
-const CAPILLARY_API_URL = 'https://eu.api.capillarytech.com/v1.1';
-const CAPILLARY_ACCESS_TOKEN = 'dGJnYWRtaW46MTBhY2QxM2RlNmViMmM1NTZjMGM5Y2ViMTA0YTk5ZGM=';
+import Constants from 'expo-constants';
+import { router } from 'expo-router';
+import { authService } from './authService';
+
+const CAPILLARY_API_URL = Constants.expoConfig?.extra?.CAPILLARY_API_URL || 'https://eu.api.capillarytech.com/v1.1';
 
 export interface Transaction {
   id: string;
@@ -76,21 +79,69 @@ export interface CustomerResponse {
 
 class CapillaryApiService {
   private baseURL = CAPILLARY_API_URL;
-  private authToken = CAPILLARY_ACCESS_TOKEN;
+  
+  /**
+   * Get auth token from session and handle expiry
+   */
+  private async getAuthToken(): Promise<string | null> {
+    const sessionToken = await authService.getAuthToken();
+    if (sessionToken) {
+      console.log('🔑 Using session auth token');
+      return sessionToken;
+    }
+    
+    console.log('❌ No auth token available - user not authenticated');
+    this.handleSessionExpiry();
+    return null;
+  }
+
+  /**
+   * Handle session expiry by redirecting to login
+   */
+  private handleSessionExpiry(): void {
+    console.log('🔐 Session expired - redirecting to login');
+    
+    // Add a small delay to prevent multiple redirects
+    setTimeout(() => {
+      router.replace('/screens/LoginScreen');
+    }, 100);
+  }
+  
+  /**
+   * Clean mobile number for Capillary API (remove +974 prefix)
+   */
+  private cleanMobileNumber(mobile: string): string {
+    // Remove any + sign and spaces
+    let cleaned = mobile.replace(/[\s\+\-\(\)]/g, '');
+    
+    // If number starts with 974, remove it
+    if (cleaned.startsWith('974')) {
+      cleaned = cleaned.substring(3);
+    }
+    
+    return cleaned;
+  }
 
   /**
    * Get customer transactions by mobile number
    */
   async getCustomerTransactionsByMobile(mobile: string): Promise<Transaction[]> {
     try {
-      const url = `${this.baseURL}/customer/transactions?mobile=${mobile}&limit=3`;
+      const cleanedMobile = this.cleanMobileNumber(mobile);
+      const url = `${this.baseURL}/customer/transactions?mobile=${cleanedMobile}&limit=3`;
       console.log('🔵 Making transactions API call to:', url);
-      console.log('🔵 With mobile number:', mobile);
+      console.log('🔵 With mobile number:', cleanedMobile);
+      
+      const authToken = await this.getAuthToken();
+      if (!authToken) {
+        console.error('🔴 No auth token available - user must login first');
+        return [];
+      }
       
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Authorization': `Basic ${this.authToken}`,
+          'Authorization': `Basic ${authToken}`,
           'Content-Type': 'application/json',
         },
       });
@@ -101,18 +152,41 @@ class CapillaryApiService {
         console.error('🔴 Transactions API request failed:', response.status, response.statusText);
         const errorText = await response.text();
         console.error('🔴 Transactions error response body:', errorText);
+        
+        // Handle 401 authentication errors
+        if (response.status === 401) {
+          console.log('🔐 401 Authentication error - clearing session and redirecting to login');
+          await authService.clearSession();
+          this.handleSessionExpiry();
+        }
+        
         return [];
       }
 
       const data: TransactionResponse = await response.json();
       console.log('🟢 Transactions API Response received:', JSON.stringify(data, null, 2));
       
-      if (data.response?.status?.code === 200 && data.response?.customer?.transactions?.transaction) {
+      // Check if API returned an error (even with 200 HTTP status)
+      if (data.response?.status?.code !== 200) {
+        console.error('🔴 Transactions API error:', {
+          code: data.response?.status?.code,
+          message: data.response?.status?.message,
+          success: data.response?.status?.success
+        });
+        
+        if (data.response?.status?.code === 500) {
+          console.error('🔴 Server error - customer might not exist or token is invalid');
+        }
+        
+        return [];
+      }
+      
+      if (data.response?.customer?.transactions?.transaction) {
         console.log('✅ Transactions found successfully!');
         return data.response.customer.transactions.transaction;
       }
       
-      console.error('🔴 Unexpected transactions API response:', data);
+      console.error('🔴 No transactions found in API response');
       return [];
     } catch (error) {
       console.error('🔴 Error fetching customer transactions:', error);
@@ -129,14 +203,21 @@ class CapillaryApiService {
     offset: number = 0
   ): Promise<{ transactions: Transaction[]; hasMore: boolean; total: number }> {
     try {
-      const url = `${this.baseURL}/customer/transactions?mobile=${mobile}&limit=${limit}&offset=${offset}`;
+      const cleanedMobile = this.cleanMobileNumber(mobile);
+      const url = `${this.baseURL}/customer/transactions?mobile=${cleanedMobile}&limit=${limit}&offset=${offset}`;
       console.log('🔵 Making paginated transactions API call to:', url);
-      console.log('🔵 With mobile:', mobile, 'limit:', limit, 'offset:', offset);
+      console.log('🔵 With mobile:', cleanedMobile, 'limit:', limit, 'offset:', offset);
+      
+      const authToken = await this.getAuthToken();
+      if (!authToken) {
+        console.error('🔴 No auth token available - user must login first');
+        return { transactions: [], hasMore: false, total: 0 };
+      }
       
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Authorization': `Basic ${this.authToken}`,
+          'Authorization': `Basic ${authToken}`,
           'Content-Type': 'application/json',
         },
       });
@@ -147,13 +228,37 @@ class CapillaryApiService {
         console.error('🔴 Paginated transactions API request failed:', response.status, response.statusText);
         const errorText = await response.text();
         console.error('🔴 Paginated transactions error response body:', errorText);
+        
+        // Handle 401 authentication errors
+        if (response.status === 401) {
+          console.log('🔐 401 Authentication error - clearing session and redirecting to login');
+          await authService.clearSession();
+          this.handleSessionExpiry();
+        }
+        
         return { transactions: [], hasMore: false, total: 0 };
       }
 
       const data: TransactionResponse = await response.json();
       console.log('🟢 Paginated transactions API Response received');
       
-      if (data.response?.status?.code === 200 && data.response?.customer?.transactions?.transaction) {
+      // Check if API returned an error (even with 200 HTTP status)
+      if (data.response?.status?.code !== 200) {
+        console.error('🔴 Paginated transactions API error:', {
+          code: data.response?.status?.code,
+          message: data.response?.status?.message,
+          success: data.response?.status?.success
+        });
+        
+        // If it's a 500 error, the customer might not exist or token is invalid
+        if (data.response?.status?.code === 500) {
+          console.error('🔴 Server error - customer might not exist or token is invalid');
+        }
+        
+        return { transactions: [], hasMore: false, total: 0 };
+      }
+      
+      if (data.response?.customer?.transactions?.transaction) {
         const transactions = data.response.customer.transactions.transaction;
         const total = parseInt(data.response.customer.count as any) || 0;
         const hasMore = (offset + limit) < total;
@@ -162,7 +267,7 @@ class CapillaryApiService {
         return { transactions, hasMore, total };
       }
       
-      console.error('🔴 Unexpected paginated transactions API response:', data);
+      console.error('🔴 No transactions found in API response');
       return { transactions: [], hasMore: false, total: 0 };
     } catch (error) {
       console.error('🔴 Error fetching paginated customer transactions:', error);
@@ -175,15 +280,23 @@ class CapillaryApiService {
    */
   async getCustomerByMobile(mobile: string): Promise<CustomerData | null> {
     try {
-      const url = `${this.baseURL}/customer/get?mobile=${mobile}`;
+      const cleanedMobile = this.cleanMobileNumber(mobile);
+      const url = `${this.baseURL}/customer/get?mobile=${cleanedMobile}`;
       console.log('🔵 Making API call to:', url);
-      console.log('🔵 With mobile number:', mobile);
-      console.log('🔵 Authorization token:', this.authToken ? 'Present' : 'Missing');
+      console.log('🔵 With mobile number:', cleanedMobile);
+      
+      const authToken = await this.getAuthToken();
+      if (!authToken) {
+        console.error('🔴 No auth token available - user must login first');
+        return null;
+      }
+      
+      console.log('🔵 Authorization token: Present');
       
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Authorization': `Basic ${this.authToken}`,
+          'Authorization': `Basic ${authToken}`,
           'Content-Type': 'application/json',
         },
       });
@@ -196,6 +309,14 @@ class CapillaryApiService {
         console.error('🔴 API request failed:', response.status, response.statusText);
         const errorText = await response.text();
         console.error('🔴 Error response body:', errorText);
+        
+        // Handle 401 authentication errors
+        if (response.status === 401) {
+          console.log('🔐 401 Authentication error - clearing session and redirecting to login');
+          await authService.clearSession();
+          this.handleSessionExpiry();
+        }
+        
         return null;
       }
 
@@ -203,7 +324,7 @@ class CapillaryApiService {
       console.log('🟢 API Response received:', JSON.stringify(data, null, 2));
       
       // Check if the response is successful
-      if (data.response?.status?.code === 200 && data.response?.customers?.customer?.length > 0) {
+      if (data.response?.status?.code === 200 && data.response?.customers?.customer && data.response.customers.customer.length > 0) {
         console.log('✅ Customer found successfully!');
         console.log('✅ Customer data:', data.response.customers.customer[0]);
         return data.response.customers.customer[0];
@@ -220,9 +341,9 @@ class CapillaryApiService {
     } catch (error) {
       console.error('🔴 Error fetching customer data:', error);
       console.error('🔴 Error details:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        name: error instanceof Error ? error.name : 'Unknown'
       });
       return null;
     }

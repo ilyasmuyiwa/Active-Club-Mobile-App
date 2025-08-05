@@ -58,26 +58,40 @@ export default function HomeScreen() {
       setLoading(true);
       setError(null);
       
-      // Fetch customer data and limited transactions in parallel
-      const [customerData, transactionResult] = await Promise.all([
-        capillaryApi.getCustomerByMobile(userMobile),
-        capillaryApi.getCustomerTransactionsPaginated(userMobile, 5, 0)
-      ]);
+      // First, fetch customer data
+      console.log('🔵 HomeScreen: Fetching customer data...');
+      const customerData = await capillaryApi.getCustomerByMobile(userMobile);
       
       if (customerData) {
+        console.log('✅ HomeScreen: Customer data received successfully');
         setCustomerData(customerData);
+        
+        // Only fetch transactions after successful customer details response
+        console.log('🔵 HomeScreen: Fetching transactions after successful customer response...');
+        try {
+          const transactionResult = await capillaryApi.getCustomerTransactionsPaginated(userMobile, 5, 0);
+          
+          if (transactionResult.transactions && transactionResult.transactions.length > 0) {
+            console.log('✅ HomeScreen: Transactions received successfully');
+            setTransactions(transactionResult.transactions);
+          } else {
+            console.log('⚠️ HomeScreen: No transactions found');
+            setTransactions([]);
+          }
+        } catch (transactionError) {
+          console.error('🔴 HomeScreen: Error fetching transactions after successful customer fetch:', transactionError);
+          setTransactions([]);
+          // Don't set error for customer data since that was successful
+        }
       } else {
+        console.log('❌ HomeScreen: Customer not found');
         setError('Customer not found');
-      }
-      
-      if (transactionResult.transactions && transactionResult.transactions.length > 0) {
-        setTransactions(transactionResult.transactions);
-      } else {
-        setTransactions([]);
+        setTransactions([]); // Clear transactions if customer not found
       }
     } catch (err) {
-      console.error('Error fetching data:', err);
-      setError('Failed to load data');
+      console.error('🔴 HomeScreen: Error fetching customer data:', err);
+      setError('Failed to load customer data');
+      setTransactions([]); // Clear transactions if customer fetch failed
     } finally {
       setLoading(false);
     }

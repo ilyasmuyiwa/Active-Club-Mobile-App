@@ -70,10 +70,26 @@ export interface CustomerResponse {
     status: {
       code: number;
       message?: string;
+      success?: string;
     };
     customers?: {
-      customer: CustomerData[];
+      customer: Array<CustomerData & {
+        item_status?: {
+          success: string;
+          code: string;
+          message: string;
+        };
+      }>;
     };
+  };
+}
+
+export interface CustomerResult {
+  customer: CustomerData | null;
+  error?: {
+    type: 'not_found' | 'api_error' | 'auth_error';
+    message: string;
+    code?: string | number;
   };
 }
 
@@ -278,7 +294,7 @@ class CapillaryApiService {
   /**
    * Get customer details by mobile number
    */
-  async getCustomerByMobile(mobile: string): Promise<CustomerData | null> {
+  async getCustomerByMobile(mobile: string, skipRedirectOnError: boolean = false): Promise<CustomerResult> {
     try {
       const cleanedMobile = this.cleanMobileNumber(mobile);
       const url = `${this.baseURL}/customer/get?mobile=${cleanedMobile}`;
@@ -288,7 +304,13 @@ class CapillaryApiService {
       const authToken = await this.getAuthToken();
       if (!authToken) {
         console.error('🔴 No auth token available - user must login first');
-        return null;
+        return {
+          customer: null,
+          error: {
+            type: 'auth_error',
+            message: 'No auth token available - user must login first'
+          }
+        };
       }
       
       console.log('🔵 Authorization token: Present');
@@ -303,7 +325,6 @@ class CapillaryApiService {
 
       console.log('🟡 Response status:', response.status);
       console.log('🟡 Response ok:', response.ok);
-      console.log('🟡 Response headers:', response.headers);
 
       if (!response.ok) {
         console.error('🔴 API request failed:', response.status, response.statusText);
@@ -312,32 +333,111 @@ class CapillaryApiService {
         
         // Handle 401 authentication errors
         if (response.status === 401) {
-          console.log('🔐 401 Authentication error - clearing session and redirecting to login');
-          await authService.clearSession();
-          this.handleSessionExpiry();
+          console.log('🔐 401 Authentication error');
+          if (!skipRedirectOnError) {
+            console.log('🔐 Clearing session and redirecting to login');
+            await authService.clearSession();
+            this.handleSessionExpiry();
+          } else {
+            console.log('🔐 Skipping redirect - this is expected for new user verification');
+          }
+          
+          return {
+            customer: null,
+            error: {
+              type: 'auth_error',
+              message: 'Authentication failed',
+              code: 401
+            }
+          };
         }
         
-        return null;
+        return {
+          customer: null,
+          error: {
+            type: 'api_error',
+            message: `API request failed: ${response.status} ${response.statusText}`,
+            code: response.status
+          }
+        };
       }
 
       const data: CustomerResponse = await response.json();
       console.log('🟢 API Response received:', JSON.stringify(data, null, 2));
       
-      // Check if the response is successful
+      // Check if the response is successful with customer data
       if (data.response?.status?.code === 200 && data.response?.customers?.customer && data.response.customers.customer.length > 0) {
+        const customerData = data.response.customers.customer[0];
+        
+        // Check if customer has item_status indicating not found (code 1012)
+        if (customerData.item_status && customerData.item_status.success === 'false' && customerData.item_status.code === '1012') {
+          console.log('⚠️ Customer not found (code 1012)');
+          return {
+            customer: null,
+            error: {
+              type: 'not_found',
+              message: customerData.item_status.message,
+              code: '1012'
+            }
+          };
+        }
+        
         console.log('✅ Customer found successfully!');
-        console.log('✅ Customer data:', data.response.customers.customer[0]);
-        return data.response.customers.customer[0];
+        console.log('✅ Customer data:', customerData);
+        return { customer: customerData };
       }
       
-      // Customer not found or other error
+      // Handle 500 error - check if it contains specific customer not found info
       if (data.response?.status?.code === 500) {
-        console.log('⚠️ Customer not found (500 error)');
-        return null;
+        // Check if this is a "customer not found" scenario
+        if (data.response?.customers?.customer && data.response.customers.customer.length > 0) {
+          const customerData = data.response.customers.customer[0];
+          if (customerData.item_status && customerData.item_status.code === '1012') {
+            console.log('⚠️ Customer not found (500 with code 1012)');
+            return {
+              customer: null,
+              error: {
+                type: 'not_found',
+                message: customerData.item_status.message,
+                code: '1012'
+              }
+            };
+          }
+        }
+        
+        console.log('⚠️ API error (500)');
+        return {
+          customer: null,
+          error: {
+            type: 'api_error',
+            message: data.response?.status?.message || 'Server error',
+            code: 500
+          }
+        };
+      }
+      
+      // Handle other authentication errors
+      if (data.response?.status?.code === 401) {
+        console.log('⚠️ Customer not found or authentication error (401)');
+        return {
+          customer: null,
+          error: {
+            type: 'auth_error',
+            message: data.response?.status?.message || 'Authentication failed',
+            code: 401
+          }
+        };
       }
 
       console.error('🔴 Unexpected API response:', data);
-      return null;
+      return {
+        customer: null,
+        error: {
+          type: 'api_error',
+          message: 'Unexpected API response',
+          code: data.response?.status?.code
+        }
+      };
     } catch (error) {
       console.error('🔴 Error fetching customer data:', error);
       console.error('🔴 Error details:', {
@@ -345,7 +445,13 @@ class CapillaryApiService {
         stack: error instanceof Error ? error.stack : undefined,
         name: error instanceof Error ? error.name : 'Unknown'
       });
-      return null;
+      return {
+        customer: null,
+        error: {
+          type: 'api_error',
+          message: error instanceof Error ? error.message : 'Unknown error'
+        }
+      };
     }
   }
 

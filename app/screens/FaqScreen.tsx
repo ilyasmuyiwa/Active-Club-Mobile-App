@@ -21,33 +21,63 @@ interface FaqItem {
 const faqData: FaqItem[] = [
   {
     id: '1',
-    question: 'How can I earn point?',
-    answer: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam rhoncus risus in luctus blandit. Sed quis ullamcorper neque. Quisque laoreet congue metus. Duis sed egestas sem. Donec eu varius odio. Integer consequat tincidunt eros a tincidunt. Etiam tincidunt, nisl quis faucibus pulvinar, dui leo posuere eros, vel venenatis odio elit non purus.',
+    question: 'What is Active Club?',
+    answer: 'Active Club is the first Qatar Community Sports Loyalty Program that offers many benefits and valuable rewards when you shop online or instore at Sports Corner, Adidas, Rasen Sports and RKN.',
   },
   {
     id: '2',
-    question: 'How can I spend point?',
-    answer: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam rhoncus risus in luctus blandit. Sed quis ullamcorper neque. Quisque laoreet congue metus.',
+    question: 'How can I sign up?',
+    answer: 'Download Active Club Mobile App from App Store or Google Play, sign up using your mobile number which will be your account number, then fill in your personal information and you will be good to go.',
   },
   {
     id: '3',
-    question: 'Where I can use my point?',
-    answer: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam rhoncus risus in luctus blandit. Sed quis ullamcorper neque. Quisque laoreet congue metus. Duis sed egestas sem. Donec eu varius odio. Integer consequat tincidunt eros a tincidunt. Etiam tincidunt, nisl quis faucibus pulvinar, dui leo posuere eros, vel venenatis odio elit non purus.',
+    question: 'How does the Active Club work?',
+    answer: 'The program is designed to reward members for their purchases from any of the participating brands/stores, where members can collect active points (AP), and after sufficient amount is collected (minimum 300 AP) they can redeem those points against future purchases.',
   },
   {
     id: '4',
-    question: 'How can I earn point?',
-    answer: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam rhoncus risus in luctus blandit.',
+    question: 'Which Brands are included in the Active Club?',
+    answer: 'The participating brands include: Sports Corner, Adidas, Rasen Sports, and RKN.',
   },
   {
     id: '5',
-    question: 'How can I spend point?',
-    answer: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam rhoncus risus in luctus blandit.',
+    question: 'How do I earn points?',
+    answer: 'Instore: Open Active Club Mobile App, present virtual card or provide mobile number. Online: Points are credited 14 days after order is received.',
   },
   {
     id: '6',
-    question: 'Where I can use my point?',
-    answer: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam rhoncus risus in luctus blandit.',
+    question: 'How many points will I earn?',
+    answer: 'Points earned depend on your tier: Active Go (1 point per QR 3 spent), Active Fit (1 point per QR 2 spent), Active Pro (1 point per QR 1 spent).',
+  },
+  {
+    id: '7',
+    question: 'What is the value of Active Points?',
+    answer: 'Minimum 300 AP (equal to QR 10) is required to redeem points.',
+  },
+  {
+    id: '8',
+    question: 'How can I redeem my points?',
+    answer: 'Instore: Check your balance and specify the points you want to redeem. Online: Login to your account, add products to cart, and select "Redeem Points" option.',
+  },
+  {
+    id: '9',
+    question: 'How can I check my points?',
+    answer: 'Through the Active Club mobile app, which shows your profile details, account details, tier, balance, and transaction history.',
+  },
+  {
+    id: '10',
+    question: 'What is the expiry date of earned points?',
+    answer: 'Points are valid for 12 months from the collection date. A reminder will be sent 15 days before expiry.',
+  },
+  {
+    id: '11',
+    question: 'Do I need a physical card?',
+    answer: 'No, it\'s a card-less program with a virtual card available in the mobile app.',
+  },
+  {
+    id: '12',
+    question: 'How can I share complaints or suggestions?',
+    answer: 'You can share complaints or suggestions through the Active Club Mobile App or by calling our toll-free number 800 9009.',
   },
 ];
 
@@ -64,7 +94,7 @@ export default function FaqScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
+          <IconSymbol name="arrow.left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>FAQ</Text>
         <View style={styles.backButton} />

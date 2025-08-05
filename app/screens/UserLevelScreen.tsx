@@ -86,12 +86,22 @@ export default function UserLevelScreen() {
       setLoading(true);
       setError(null);
       
-      const data = await capillaryApi.getCustomerByMobile(userMobile);
+      console.log('🔵 UserLevelScreen: Fetching customer data for:', userMobile);
+      const result = await capillaryApi.getCustomerByMobile(userMobile);
+      console.log('🔵 UserLevelScreen: API result:', result);
       
-      if (data) {
-        setCustomerData(data);
+      if (result.customer) {
+        console.log('✅ UserLevelScreen: Customer found:', result.customer);
+        console.log('🔵 UserLevelScreen: Points:', result.customer.loyalty_points);
+        console.log('🔵 UserLevelScreen: Tier:', result.customer.current_slab);
+        setCustomerData(result.customer);
       } else {
-        setError('Customer not found');
+        console.log('❌ UserLevelScreen: Customer not found or error');
+        if (result.error?.type === 'not_found') {
+          setError('Customer not found');
+        } else {
+          setError('Failed to load data');
+        }
       }
     } catch (err) {
       console.error('Error fetching customer data:', err);
@@ -104,13 +114,17 @@ export default function UserLevelScreen() {
   // Calculate membership data from API or use fallback
   const getMembershipData = () => {
     if (!customerData) {
+      console.log('⚠️ UserLevelScreen: No customer data, using fallback');
       return fallbackData;
     }
 
+    console.log('🔵 UserLevelScreen: Using API data for customer:', customerData);
     const points = capillaryApi.getCustomerPoints(customerData);
     const tier = capillaryApi.getCustomerTier(customerData);
     const { percentage, nextTarget } = capillaryApi.calculateProgress(points, tier);
     const rewardAmount = capillaryApi.calculateRewardAmount(points);
+
+    console.log('🔵 UserLevelScreen: Calculated data:', { points, tier, percentage, rewardAmount });
 
     return {
       currentPoints: points,
@@ -131,8 +145,11 @@ export default function UserLevelScreen() {
     const currentTier = membershipData.currentLevel;
     
     return tiers.map(tier => {
-      const isCurrentTier = tier.name === currentTier;
-      const isCompleted = currentPoints >= tier.pointsThreshold && tier.name !== currentTier;
+      // Handle tier comparison with or without "Active" prefix
+      const normalizedCurrentTier = currentTier.replace('Active', '');
+      const normalizedTierName = tier.name.replace('Active', '');
+      const isCurrentTier = normalizedTierName === normalizedCurrentTier;
+      const isCompleted = currentPoints >= tier.pointsThreshold && !isCurrentTier;
       
       return {
         ...tier,
@@ -201,7 +218,7 @@ export default function UserLevelScreen() {
 
   const LevelCard = ({ level }: { level: LevelTier }) => {
     const getStarImage = () => {
-      // Corrected: star_first.png for Go, star_third.png for Pro
+      // star_third.png for Go, star_second.png for Fit, star_first.png for Pro
       if (level.name === 'ActiveGo') return require('../../assets/notifications/star_third.png');
       if (level.name === 'ActiveFit') return require('../../assets/notifications/star_second.png');
       return require('../../assets/notifications/star_first.png'); // ActivePro
@@ -270,9 +287,9 @@ export default function UserLevelScreen() {
             <View style={styles.starContainer}>
               <Image
                 source={
-                  membershipData.currentLevel === 'ActiveGo' ? require('../../assets/notifications/star_first.png') :
-                  membershipData.currentLevel === 'ActiveFit' ? require('../../assets/notifications/star_second.png') :
-                  require('../../assets/notifications/star_third.png')
+                  (membershipData.currentLevel === 'ActiveGo' || membershipData.currentLevel === 'Go') ? require('../../assets/notifications/star_third.png') :
+                  (membershipData.currentLevel === 'ActiveFit' || membershipData.currentLevel === 'Fit') ? require('../../assets/notifications/star_second.png') :
+                  require('../../assets/notifications/star_first.png')
                 }
                 style={{ width: 60, height: 60 }}
                 resizeMode="contain"
@@ -283,7 +300,7 @@ export default function UserLevelScreen() {
                 You are an Active Club
               </Text>
               <Text style={[styles.statusLevel, { color: colors.text }]}>
-                Active{membershipData.currentLevel}
+                {membershipData.currentLevel.startsWith('Active') ? membershipData.currentLevel : `Active${membershipData.currentLevel}`}
               </Text>
               <TouchableOpacity onPress={() => router.push('/(tabs)/activities')}>
                 <Text style={styles.pointsActivity}>Points activity</Text>

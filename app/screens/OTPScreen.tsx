@@ -32,7 +32,7 @@ const OtpScreen: React.FC = () => {
   const [isResending, setIsResending] = useState(false);
   const router = useRouter();
   const params = useLocalSearchParams<{ phoneNumber: string }>();
-  const { checkAuthStatus } = useUser();
+  const { checkAuthStatus, setAuthFlow } = useUser();
   
   console.log('🎯 OTP Screen - All params received:', params);
   console.log('🎯 OTP Screen - phoneNumber param:', params.phoneNumber);
@@ -44,6 +44,9 @@ const OtpScreen: React.FC = () => {
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
   useEffect(() => {
+    // Set auth flow state when component mounts
+    setAuthFlow(true);
+    
     const interval = setInterval(() => {
       setTimer((prev) => {
         if (prev <= 1) {
@@ -55,8 +58,12 @@ const OtpScreen: React.FC = () => {
       });
     }, 1000);
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      clearInterval(interval);
+      // Clear auth flow state when component unmounts
+      setAuthFlow(false);
+    };
+  }, [setAuthFlow]);
 
   const handleOtpChange = (value: string, index: number) => {
     // Handle iOS auto-fill - if user pastes/auto-fills multiple digits
@@ -134,17 +141,84 @@ const OtpScreen: React.FC = () => {
         // Update auth context
         await checkAuthStatus();
         
-        setSuccessMessage({
-          title: 'Welcome!',
-          message: 'You have logged in successfully!'
-        });
-        setShowSuccessAlert(true);
+        // Check if user exists in Capillary system
+        console.log('🔍 OTP Screen: Checking customer in Capillary system...');
         
-        // Navigate to home screen
-        setTimeout(() => {
-          setShowSuccessAlert(false);
-          router.replace('/(tabs)');
-        }, 2000);
+        try {
+          // Import capillaryApi here to avoid circular dependencies
+          const { capillaryApi } = await import('../../services/capillaryApi');
+          const customerResult = await capillaryApi.getCustomerByMobile(phoneNumber, true);
+          
+          if (customerResult.customer) {
+            console.log('✅ OTP Screen: Customer found in Capillary, redirecting to home');
+            setSuccessMessage({
+              title: 'Welcome back!',
+              message: 'You have logged in successfully!'
+            });
+            setShowSuccessAlert(true);
+            
+            // Navigate to home screen
+            setTimeout(() => {
+              setShowSuccessAlert(false);
+              router.replace('/(tabs)');
+            }, 2000);
+          } else if (customerResult.error?.type === 'not_found') {
+            console.log('⚠️ OTP Screen: Customer not found in Capillary (code 1012), redirecting to registration');
+            setSuccessMessage({
+              title: 'Complete Your Profile',
+              message: 'Please complete your registration to continue'
+            });
+            setShowSuccessAlert(true);
+            
+            // Navigate to registration screen
+            setTimeout(() => {
+              setShowSuccessAlert(false);
+              router.replace('/screens/RegistrationScreen');
+            }, 2000);
+          } else {
+            // API error - show error popup, don't redirect to registration
+            console.error('🔴 OTP Screen: Capillary API error:', customerResult.error);
+            Alert.alert(
+              'System Error',
+              customerResult.error?.message || 'Unable to verify your account. Please try again later.',
+              [
+                {
+                  text: 'Try Again',
+                  onPress: () => {
+                    // Allow user to try verification again
+                    setOtp(['', '', '', '', '']);
+                    inputRefs.current[0]?.focus();
+                  }
+                },
+                {
+                  text: 'Go Back',
+                  onPress: () => router.back()
+                }
+              ]
+            );
+          }
+        } catch (capillaryError) {
+          console.error('🔴 OTP Screen: Unexpected error checking Capillary customer:', capillaryError);
+          // Network or unexpected error - show error popup
+          Alert.alert(
+            'Connection Error',
+            'Unable to verify your account due to a network error. Please check your connection and try again.',
+            [
+              {
+                text: 'Try Again',
+                onPress: () => {
+                  // Allow user to try verification again
+                  setOtp(['', '', '', '', '']);
+                  inputRefs.current[0]?.focus();
+                }
+              },
+              {
+                text: 'Go Back',
+                onPress: () => router.back()
+              }
+            ]
+          );
+        }
       } else {
         Alert.alert('Invalid OTP', 'The OTP you entered is incorrect. Please try again.');
         // Clear OTP inputs
@@ -231,7 +305,7 @@ const OtpScreen: React.FC = () => {
           {otp.map((digit, index) => (
             <TextInput
               key={index}
-              ref={(ref) => inputRefs.current[index] = ref}
+              ref={(ref) => { inputRefs.current[index] = ref; }}
               style={[
                 styles.otpInput,
                 digit && styles.otpInputFilled

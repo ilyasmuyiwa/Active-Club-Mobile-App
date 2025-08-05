@@ -17,18 +17,18 @@ export default function ContactScreen() {
   const colors = Colors[colorScheme ?? 'light'];
 
   const handleCallSupport = () => {
-    Linking.openURL('tel:+1234567890');
+    Linking.openURL('tel:8009009');
   };
 
   const handleGetInTouch = () => {
-    router.push('/contact-form');
+    Linking.openURL('mailto:ilyas.soladogun@tbg.qa');
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
+          <IconSymbol name="arrow.left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Contact us</Text>
         <View style={styles.backButton} />

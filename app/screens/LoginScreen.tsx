@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState, useEffect, useRef } from 'react';
+import { useUser } from '../../contexts/UserContext';
 import {
   Dimensions,
   Image,
@@ -13,17 +14,22 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   View,
-  Animated
+  Animated,
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { ActiveClubLogoSvg } from '../../assets/ActiveClubLogo';
+import { authService } from '../../services/authService';
 
 const { height, width } = Dimensions.get('window');
 
 const LoginScreen: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isValidNumber, setIsValidNumber] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { setPhoneNumber: setContextPhoneNumber, checkAuthStatus, setAuthFlow } = useUser();
   
   // Animation values
   const logoAnimatedValue = useRef(new Animated.Value(-100)).current;
@@ -31,6 +37,9 @@ const LoginScreen: React.FC = () => {
   const logoOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Set auth flow state when component mounts
+    setAuthFlow(true);
+    
     // Animate logo sliding down from top
     Animated.parallel([
       Animated.spring(logoAnimatedValue, {
@@ -55,7 +64,12 @@ const LoginScreen: React.FC = () => {
         useNativeDriver: true,
       }).start();
     }, 300);
-  }, []);
+    
+    return () => {
+      // Clear auth flow state when component unmounts
+      setAuthFlow(false);
+    };
+  }, [setAuthFlow]);
 
   const handlePhoneNumberChange = (text: string) => {
     // Remove all non-numeric characters and spaces
@@ -87,12 +101,37 @@ const LoginScreen: React.FC = () => {
     }
   };
 
-  const handleLogin = () => {
-    if (isValidNumber) {
-      router.push({
-        pathname: '/screens/OTPScreen',
-        params: { phoneNumber: phoneNumber }
-      });
+  const handleLogin = async () => {
+    if (!isValidNumber) {
+      Alert.alert('Invalid Number', 'Please enter a valid Qatar mobile number.');
+      return;
+    }
+
+    setIsLoading(true);
+    console.log('🚀 Login Screen: Requesting OTP for:', phoneNumber);
+    
+    try {
+      const response = await authService.requestOTP(phoneNumber);
+      
+      if (response.success) {
+        console.log('✅ Login Screen: OTP sent successfully');
+        
+        // Navigate to OTP screen with phone number
+        router.push({
+          pathname: '/screens/OtpScreen',
+          params: { phoneNumber: phoneNumber }
+        });
+      } else {
+        Alert.alert('Error', response.message || 'Failed to send OTP. Please try again.');
+      }
+    } catch (error) {
+      console.error('🔴 Login Screen: Error requesting OTP:', error);
+      Alert.alert(
+        'Connection Error', 
+        'Unable to send OTP. Please check your internet connection and try again.'
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -161,11 +200,15 @@ const LoginScreen: React.FC = () => {
             </View>
 
             <TouchableOpacity 
-              style={[styles.button, !isValidNumber && styles.buttonDisabled]}
+              style={[styles.button, (!isValidNumber || isLoading) && styles.buttonDisabled]}
               onPress={handleLogin}
-              disabled={!isValidNumber}
+              disabled={!isValidNumber || isLoading}
             >
-              <Text style={styles.buttonText}>Login</Text>
+              {isLoading ? (
+                <ActivityIndicator color="#000000" size="small" />
+              ) : (
+                <Text style={styles.buttonText}>Send OTP</Text>
+              )}
             </TouchableOpacity>
           </Animated.View>
         </KeyboardAvoidingView>

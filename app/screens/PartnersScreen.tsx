@@ -12,6 +12,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
+import { SvgXml } from 'react-native-svg';
+import { ScIconSvg } from '../../assets/ScIcon';
+import { RknIconSvg } from '../../assets/RknIcon';
+import { LiningIconSvg } from '../../assets/LiningIcon';
 
 interface Partner {
   id: string;
@@ -26,19 +30,19 @@ const partnersData: Partner[] = [
     id: '1',
     name: 'Sports Corner',
     storeCount: '10 Stores',
-    icon: 'play',
+    icon: 'sc',
   },
   {
     id: '2',
     name: 'RKN',
     storeCount: '1 Store',
-    icon: 'dumbbell',
+    icon: 'rkn',
   },
   {
     id: '3',
     name: 'Li-Ning',
     storeCount: '1 Store',
-    icon: 'shoe-print',
+    icon: 'lining',
   },
 ];
 
@@ -46,14 +50,23 @@ export default function PartnersScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
+  const getPartnerIcon = (iconType: string) => {
+    switch (iconType) {
+      case 'sc':
+        return <SvgXml xml={ScIconSvg} width={28} height={28} color="#333" />;
+      case 'rkn':
+        return <SvgXml xml={RknIconSvg} width={32} height={26} color="#333" />;
+      case 'lining':
+        return <SvgXml xml={LiningIconSvg} width={40} height={16} color="#333" />;
+      default:
+        return <MaterialCommunityIcons name="store" size={28} color="#333" />;
+    }
+  };
+
   const PartnerCard = ({ partner }: { partner: Partner }) => (
-    <TouchableOpacity style={[styles.partnerCard, { backgroundColor: colors.card }]}>
+    <TouchableOpacity style={styles.partnerCard}>
       <View style={styles.partnerIcon}>
-        <MaterialCommunityIcons 
-          name={partner.icon as any} 
-          size={32} 
-          color="#333" 
-        />
+        {getPartnerIcon(partner.icon)}
       </View>
       
       <View style={styles.partnerInfo}>
@@ -69,16 +82,16 @@ export default function PartnersScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
+          <IconSymbol name="arrow.left" size={28} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Partners</Text>
         <View style={styles.backButton} />
       </View>
 
       <ScrollView 
-        style={styles.content} 
+        style={[styles.content, { backgroundColor: '#E8E8E8' }]} 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
@@ -124,6 +137,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
+    paddingTop: 15,
     paddingBottom: 20,
   },
   loyaltySection: {
@@ -148,6 +162,7 @@ const styles = StyleSheet.create({
   partnerCard: {
     width: '30%',
     aspectRatio: 1,
+    backgroundColor: 'white',
     borderRadius: 12,
     padding: 15,
     alignItems: 'center',
@@ -155,11 +170,11 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
     marginBottom: 15,
   },
   partnerIcon: {

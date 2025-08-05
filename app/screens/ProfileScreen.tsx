@@ -62,33 +62,57 @@ export default function ProfileScreen() {
     }
   }, [userMobile]);
   
+  // Debug state changes
+  useEffect(() => {
+    console.log('🔍 ProfileScreen State Update:', {
+      firstName,
+      lastName,
+      mobileNumber,
+      email,
+      loading
+    });
+  }, [firstName, lastName, mobileNumber, email, loading]);
+  
   const fetchCustomerData = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const data = await capillaryApi.getCustomerByMobile(userMobile);
+      console.log('🔵 ProfileScreen: Fetching customer data for:', userMobile);
+      const result = await capillaryApi.getCustomerByMobile(userMobile);
+      console.log('🔵 ProfileScreen: API result:', result);
       
-      if (data) {
-        setCustomerData(data);
-        populateFormWithApiData(data);
+      if (result.customer) {
+        console.log('✅ ProfileScreen: Customer found, setting data');
+        setCustomerData(result.customer);
+        populateFormWithApiData(result.customer);
+        // Set loading to false after data is populated
+        setLoading(false);
       } else {
-        setError('Customer not found');
+        if (result.error?.type === 'not_found') {
+          setError('Customer not found');
+        } else {
+          setError('Failed to load data');
+        }
         // Keep fields empty when customer not found
         clearAllFields();
+        setLoading(false);
       }
     } catch (err) {
       console.error('Error fetching customer data:', err);
       setError('Failed to load data');
       // Keep fields empty when API fails
       clearAllFields();
-    } finally {
       setLoading(false);
     }
   };
   
   const populateFormWithApiData = (data: CustomerData) => {
+    console.log('🔵 ProfileScreen: Populating form with data:', data);
+    
     // Only set fields if they exist in API, otherwise leave empty
+    console.log('🔵 ProfileScreen: Setting firstName:', data.firstname);
+    console.log('🔵 ProfileScreen: Setting lastName:', data.lastname);
     setFirstName(data.firstname || '');
     setLastName(data.lastname || '');
     
@@ -134,6 +158,8 @@ export default function ProfileScreen() {
     } else {
       setDateOfBirth(''); // Leave empty if no date found
     }
+    
+    console.log('✅ ProfileScreen: Form population complete');
   };
   
   const clearAllFields = () => {

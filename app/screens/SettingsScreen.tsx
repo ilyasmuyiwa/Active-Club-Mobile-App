@@ -1,25 +1,55 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Switch,
-  SafeAreaView,
-} from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useUser } from '../../contexts/UserContext';
 
 export default function SettingsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { logout, phoneNumber, isAuthenticated } = useUser();
   
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [smsNotifications, setSmsNotifications] = useState(true);
-  const [language] = useState('العربية');
+  const [language] = useState('English');
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await logout();
+              // Navigate to login screen
+              router.replace('/screens/LoginScreen');
+            } catch (error) {
+              console.error('Error during logout:', error);
+              Alert.alert('Error', 'Failed to logout. Please try again.');
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const SettingsSection = ({ title, icon }: { title: string; icon: string }) => (
     <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
@@ -53,8 +83,11 @@ export default function SettingsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <IconSymbol name="gearshape.fill" size={24} color="#F1C229" />
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <IconSymbol name="arrow.left" size={28} color={colors.text} />
+          </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Settings</Text>
+          <View style={styles.backButton} />
         </View>
 
         <View style={styles.content}>
@@ -123,13 +156,40 @@ export default function SettingsScreen() {
             onPress={() => router.push('/privacy')}
           />
 
-          <TouchableOpacity 
-            style={[styles.logoutButton, { borderColor: colors.border }]}
-            onPress={() => {}}
-          >
-            <IconSymbol name="arrow.right.square" size={20} color={colors.text} />
-            <Text style={[styles.logoutText, { color: colors.text }]}>Logout</Text>
-          </TouchableOpacity>
+          {/* Show logout button only if authenticated */}
+          {isAuthenticated && (
+            <>
+              {/* Session Info */}
+              <SettingsSection title="Account" icon="person.fill" />
+              
+              <SettingsItem
+                title="Phone Number"
+                rightElement={
+                  <Text style={[styles.phoneText, { color: colors.icon }]}>
+                    {phoneNumber ? `${phoneNumber}` : 'Not set'}
+                  </Text>
+                }
+              />
+              
+              <TouchableOpacity 
+                style={[styles.logoutButton, { borderColor: '#FF6B6B' }]}
+                onPress={handleLogout}
+              >
+                <IconSymbol name="arrow.right.square" size={20} color="#FF6B6B" />
+                <Text style={[styles.logoutText, { color: '#FF6B6B' }]}>Logout</Text>
+              </TouchableOpacity>
+            </>
+          )}
+          
+          {!isAuthenticated && (
+            <TouchableOpacity 
+              style={[styles.loginButton, { backgroundColor: '#F1C229' }]}
+              onPress={() => router.push('/screens/LoginScreen')}
+            >
+              <IconSymbol name="arrow.right.square" size={20} color="#000" />
+              <Text style={[styles.loginText, { color: '#000' }]}>Login</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -143,9 +203,12 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 20,
-    gap: 10,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  backButton: {
+    width: 40,
   },
   headerTitle: {
     fontSize: 24,
@@ -194,5 +257,23 @@ const styles = StyleSheet.create({
   logoutText: {
     fontSize: 16,
     fontWeight: '500',
+  },
+  phoneText: {
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
+  loginButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 15,
+    marginTop: 30,
+    marginBottom: 20,
+    borderRadius: 10,
+  },
+  loginText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

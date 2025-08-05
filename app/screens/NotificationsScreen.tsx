@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  Image,
 } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
@@ -78,7 +79,11 @@ export default function NotificationsScreen() {
     if (type === 'achievement') {
       return (
         <View style={styles.achievementIcon}>
-          <IconSymbol name="star.fill" size={20} color="#F1C229" />
+          <Image
+            source={require('../../assets/notifications/star_second.png')}
+            style={{ width: 20, height: 20 }}
+            resizeMode="contain"
+          />
         </View>
       );
     }
@@ -97,30 +102,27 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <IconSymbol name="chevron.left" size={24} color={colors.text} />
+          <IconSymbol name="arrow.left" size={28} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Notifications</Text>
         <View style={styles.backButton} />
       </View>
 
-      <View style={styles.markAllContainer}>
+      <View style={[styles.markAllContainer, { backgroundColor: colors.background }]}>
         <TouchableOpacity>
           <Text style={styles.markAllText}>Mark all as read</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={[styles.content, { backgroundColor: '#E8E8E8' }]} showsVerticalScrollIndicator={false}>
         {renderDateSeparator('TODAY')}
         
         {notificationsData.slice(0, 2).map((notification) => (
           <View 
             key={notification.id}
-            style={[
-              styles.notificationItem,
-              { backgroundColor: colors.card }
-            ]}
+            style={styles.notificationItem}
           >
             {getNotificationIcon(notification.type)}
             <View style={styles.notificationContent}>
@@ -128,7 +130,11 @@ export default function NotificationsScreen() {
                 {notification.title}
               </Text>
               <View style={styles.notificationMeta}>
-                <IconSymbol name="star.fill" size={12} color="#F1C229" />
+                <Image
+                  source={require('../../assets/notifications/star_second.png')}
+                  style={{ width: 12, height: 12 }}
+                  resizeMode="contain"
+                />
                 <Text style={[styles.notificationTime, { color: colors.text }]}>
                   {notification.time}
                 </Text>
@@ -142,10 +148,7 @@ export default function NotificationsScreen() {
         {notificationsData.slice(2, 3).map((notification) => (
           <View 
             key={notification.id}
-            style={[
-              styles.notificationItem,
-              { backgroundColor: colors.card }
-            ]}
+            style={styles.notificationItem}
           >
             {getNotificationIcon(notification.type)}
             <View style={styles.notificationContent}>
@@ -153,7 +156,11 @@ export default function NotificationsScreen() {
                 {notification.title}
               </Text>
               <View style={styles.notificationMeta}>
-                <IconSymbol name="star.fill" size={12} color="#F1C229" />
+                <Image
+                  source={require('../../assets/notifications/star_second.png')}
+                  style={{ width: 12, height: 12 }}
+                  resizeMode="contain"
+                />
                 <Text style={[styles.notificationTime, { color: colors.text }]}>
                   {notification.time}
                 </Text>
@@ -166,10 +173,7 @@ export default function NotificationsScreen() {
           <View key={notification.id}>
             {notification.date && renderDateSeparator(notification.date)}
             <View 
-              style={[
-                styles.notificationItem,
-                { backgroundColor: colors.card || '#f5f5f5' }
-              ]}
+              style={styles.notificationItem}
             >
               {getNotificationIcon(notification.type)}
               <View style={styles.notificationContent}>
@@ -234,10 +238,19 @@ const styles = StyleSheet.create({
   },
   notificationItem: {
     flexDirection: 'row',
+    backgroundColor: 'white',
     padding: 15,
     marginBottom: 10,
     borderRadius: 10,
     alignItems: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   achievementIcon: {
     width: 40,

@@ -10,6 +10,7 @@ interface UserContextType {
   setPhoneNumber: (phone: string | null) => void;
   logout: () => Promise<void>;
   checkAuthStatus: () => Promise<void>;
+  setAuthFlow: (inFlow: boolean) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -18,6 +19,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInAuthFlow, setIsInAuthFlow] = useState(false);
   const sessionCheckInterval = useRef<NodeJS.Timeout | null>(null);
 
   const checkAuthStatus = async (shouldRedirect: boolean = false) => {
@@ -34,12 +36,14 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.log('🔐 UserContext: No authenticated session found');
         setPhoneNumber(null);
         
-        // Redirect to login if session expired and we should redirect
-        if (shouldRedirect) {
+        // Only redirect if we should redirect and not in auth flow
+        if (shouldRedirect && !isInAuthFlow) {
           console.log('🔐 UserContext: Session expired - redirecting to login');
           setTimeout(() => {
             router.replace('/screens/LoginScreen');
           }, 100);
+        } else if (shouldRedirect && isInAuthFlow) {
+          console.log('🔐 UserContext: In auth flow, skipping redirect to prevent loop');
         }
       }
     } catch (error) {
@@ -91,6 +95,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setPhoneNumber(phone);
   };
 
+  const setAuthFlow = (inFlow: boolean) => {
+    console.log('🔐 UserContext: Setting auth flow:', inFlow);
+    setIsInAuthFlow(inFlow);
+  };
+
   useEffect(() => {
     checkAuthStatus();
     
@@ -126,7 +135,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       isLoading,
       setPhoneNumber: setPhoneNumberWithUpdate, 
       logout, 
-      checkAuthStatus 
+      checkAuthStatus,
+      setAuthFlow
     }}>
       {children}
     </UserContext.Provider>

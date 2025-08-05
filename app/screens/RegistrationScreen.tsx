@@ -1,7 +1,9 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import SuccessAlert from '@/components/SuccessAlert';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import { getNationalityOptions } from '../../utils/nationalities';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -33,12 +35,9 @@ const RegistrationScreen: React.FC = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showNationalityDropdown, setShowNationalityDropdown] = useState(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
-  const nationalityOptions = [
-    'Qatar', 'United Arab Emirates', 'Saudi Arabia', 'Kuwait', 'Bahrain', 'Oman',
-    'Jordan', 'Lebanon', 'Egypt', 'India', 'Pakistan', 'Bangladesh', 
-    'Philippines', 'Nepal', 'Sri Lanka', 'Other'
-  ];
+  const nationalityOptions = getNationalityOptions();
 
   const [formData, setFormData] = useState<FormData>({
     title: 'Mr',
@@ -144,17 +143,12 @@ const RegistrationScreen: React.FC = () => {
 
   const handleCreateAccount = () => {
     if (isFormValid()) {
-      // Simulate account creation
-      Alert.alert(
-        'Account Created!',
-        'Your Active Club account has been successfully created.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/(tabs)')
-          }
-        ]
-      );
+      // Show success alert
+      setShowSuccessAlert(true);
+      setTimeout(() => {
+        setShowSuccessAlert(false);
+        router.replace('/(tabs)');
+      }, 2000);
     } else {
       Alert.alert('Error', 'Please fill in all required fields and accept the terms.');
     }
@@ -351,7 +345,7 @@ const RegistrationScreen: React.FC = () => {
               )}
             </TouchableOpacity>
             <Text style={styles.checkboxText}>
-              I'd like to receive the latest news and promotions.
+              I&apos;d like to receive the latest news and promotions.
             </Text>
           </View>
 
@@ -411,6 +405,13 @@ const RegistrationScreen: React.FC = () => {
           </View>
         </View>
       )}
+      
+      <SuccessAlert
+        visible={showSuccessAlert}
+        onClose={() => setShowSuccessAlert(false)}
+        title={`Welcome ${formData.firstName || 'to Active Club'}!`}
+        message="Your Active Club account has been successfully created!"
+      />
     </KeyboardAvoidingView>
   );
 };

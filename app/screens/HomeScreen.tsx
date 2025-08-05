@@ -1,5 +1,5 @@
-import { Ionicons } from '@expo/vector-icons';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -60,11 +60,11 @@ export default function HomeScreen() {
       
       // First, fetch customer data
       console.log('🔵 HomeScreen: Fetching customer data...');
-      const customerData = await capillaryApi.getCustomerByMobile(userMobile);
+      const customerResult = await capillaryApi.getCustomerByMobile(userMobile);
       
-      if (customerData) {
+      if (customerResult.customer) {
         console.log('✅ HomeScreen: Customer data received successfully');
-        setCustomerData(customerData);
+        setCustomerData(customerResult.customer);
         
         // Only fetch transactions after successful customer details response
         console.log('🔵 HomeScreen: Fetching transactions after successful customer response...');
@@ -84,8 +84,12 @@ export default function HomeScreen() {
           // Don't set error for customer data since that was successful
         }
       } else {
-        console.log('❌ HomeScreen: Customer not found');
-        setError('Customer not found');
+        console.log('❌ HomeScreen: Customer not found or error occurred');
+        if (customerResult.error?.type === 'not_found') {
+          setError('Customer not found');
+        } else {
+          setError('Failed to load customer data');
+        }
         setTransactions([]); // Clear transactions if customer not found
       }
     } catch (err) {
@@ -121,6 +125,40 @@ export default function HomeScreen() {
   };
 
   const membershipData = getMembershipData();
+
+  // Get card image based on tier
+  const getCardImage = (tier: string) => {
+    switch (tier) {
+      case 'ActiveGo':
+      case 'Go':
+        return require('../../assets/images/card-3.png'); // Go tier
+      case 'ActiveFit':
+      case 'Fit':
+        return require('../../assets/images/card-2.png'); // Fit tier
+      case 'ActivePro':
+      case 'Pro':
+        return require('../../assets/images/card-1.png'); // Pro tier
+      default:
+        return require('../../assets/images/card-3.png'); // Default to Go tier
+    }
+  };
+
+  // Get star icon based on tier
+  const getStarIcon = (tier: string) => {
+    switch (tier) {
+      case 'ActiveGo':
+      case 'Go':
+        return require('../../assets/notifications/star_third.png'); // Go tier
+      case 'ActiveFit':
+      case 'Fit':
+        return require('../../assets/notifications/star_second.png'); // Fit tier
+      case 'ActivePro':
+      case 'Pro':
+        return require('../../assets/notifications/star_first.png'); // Pro tier
+      default:
+        return require('../../assets/notifications/star_third.png'); // Default to Go tier
+    }
+  };
 
   // Show loading indicator
   if (loading) {
@@ -283,7 +321,7 @@ export default function HomeScreen() {
               activeOpacity={0.95}
             >
               <Image
-                source={require('../../assets/images/card-3.png')}
+                source={getCardImage(membershipData.tier)}
                 style={styles.cardBackground}
                 resizeMode="cover"
               />
@@ -291,7 +329,7 @@ export default function HomeScreen() {
               <View style={styles.cardHeader}>
                 <View style={styles.cardLogo}>
                   <Image
-                    source={require('../../assets/notifications/star_second.png')}
+                    source={getStarIcon(membershipData.tier)}
                     style={{ width: 32, height: 32 }}
                     resizeMode="contain"
                   />
@@ -345,7 +383,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* QR Code Section */}
+        {/* Barcode Section */}
         <View style={styles.barcodeSection}>
           <Text style={styles.scanText}>Scan and collect rewards</Text>
           <TouchableOpacity 
@@ -355,17 +393,18 @@ export default function HomeScreen() {
           >
             <Image
               source={{ uri: 
-                `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(customerData?.mobile || userMobile)}&format=png`
+                `https://barcodeapi.org/api/128/${customerData?.mobile || userMobile}?text=none`
                }}
               style={styles.barcode}
               resizeMode="contain"
               onError={(e) => {
-                console.log('QR code loading error:', e.nativeEvent.error);
+                console.log('Barcode loading error:', e.nativeEvent.error);
               }}
               onLoad={() => {
-                console.log('QR code loaded successfully');
+                console.log('Barcode loaded successfully');
               }}
             />
+
           </TouchableOpacity>
           {error && (
             <TouchableOpacity 
@@ -440,7 +479,7 @@ export default function HomeScreen() {
       </ScrollView>
       </SafeAreaView>
 
-      {/* QR Code Modal */}
+      {/* Barcode Modal */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -450,7 +489,7 @@ export default function HomeScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Membership QR Code</Text>
+              <Text style={styles.modalTitle}>Membership Barcode</Text>
               <TouchableOpacity 
                 style={styles.closeButton}
                 onPress={() => setQrModalVisible(false)}
@@ -459,18 +498,18 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
             
-            <View style={styles.largeQrContainer}>
+            <View style={styles.largeBarcodeContainer}>
               <Image
                 source={{ uri: 
-                  `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(customerData?.mobile || userMobile)}&format=png`
+                  `https://barcodeapi.org/api/128/${customerData?.mobile || userMobile}`
                  }}
-                style={styles.largeQrCode}
+                style={styles.largeBarcodeImage}
                 resizeMode="contain"
               />
             </View>
             
             <Text style={styles.modalInstruction}>
-              Show this QR code to the cashier to collect rewards
+              Show this barcode to the cashier to collect rewards
             </Text>
           </View>
         </View>
@@ -667,15 +706,15 @@ const styles = StyleSheet.create({
   },
   barcodeContainer: {
     width: '100%',
-    height: 120,
+    height: 80,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 15,
+    padding: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   barcode: {
-    width: '100%',
+    width: '400%',
     height: '100%',
   },
   activitiesSection: {
@@ -833,7 +872,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     width: '90%',
-    maxWidth: 350,
+    maxWidth: 380,
     alignItems: 'center',
   },
   modalHeader: {
@@ -866,6 +905,27 @@ const styles = StyleSheet.create({
   largeQrCode: {
     width: '100%',
     height: '100%',
+  },
+  largeBarcodeContainer: {
+    width: '100%',
+    maxWidth: 350,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  largeBarcodeImage: {
+    width: '100%',
+    height: 170,
+  },
+  barcodeNumber: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
   },
   modalInstruction: {
     fontSize: 14,

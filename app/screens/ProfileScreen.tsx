@@ -35,7 +35,7 @@ export default function ProfileScreen() {
   const [lastName, setLastName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
   const [email, setEmail] = useState('');
-  const [nationality, setNationality] = useState('Qatar');
+  const [nationality, setNationality] = useState('Please select');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -48,7 +48,7 @@ export default function ProfileScreen() {
   const [originalData, setOriginalData] = useState({
     firstName: '',
     lastName: '',
-    nationality: 'Qatar',
+    nationality: 'Please select',
     dateOfBirth: ''
   });
   
@@ -148,9 +148,9 @@ export default function ProfileScreen() {
     
     setEmail(data.email || '');
     
-    // Try to get nationality from custom fields - keep default if not found
+    // Try to get nationality from custom fields - show 'Please select' if not found
     const nationalityField = capillaryApi.getCustomField(data, 'nationality');
-    const nationality = nationalityField || 'Qatar';
+    const nationality = nationalityField || 'Please select';
     setNationality(nationality);
     
     // Try to get date of birth from extended fields - API uses 'dob_date'
@@ -192,14 +192,14 @@ export default function ProfileScreen() {
     setMobileNumber('');
     setEmail('');
     setDateOfBirth('');
-    setNationality('Qatar'); // Keep default nationality
+    setNationality('Please select'); // Show please select when no data
     setSelectedDate(new Date()); // Keep default date
     
     // Clear original data as well
     setOriginalData({
       firstName: '',
       lastName: '',
-      nationality: 'Qatar',
+      nationality: 'Please select',
       dateOfBirth: ''
     });
   };
@@ -259,7 +259,7 @@ export default function ProfileScreen() {
       const updateData = {
         firstname: firstName.trim(),
         lastname: lastName.trim(),
-        nationality: nationality.trim(),
+        nationality: nationality.trim() === 'Please select' ? '' : nationality.trim(),
         dob: apiDateOfBirth
       };
       

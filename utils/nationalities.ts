@@ -38,6 +38,6 @@ export const getNationalityOptions = (): string[] => {
   // Sort other countries alphabetically
   otherCountries.sort();
   
-  // Return with Qatar first, then other countries alphabetically
-  return ['Qatar', ...otherCountries];
+  // Return with 'Please select' first, then Qatar, then other countries alphabetically
+  return ['Please select', 'Qatar', ...otherCountries];
 };

@@ -667,15 +667,46 @@ class CapillaryApiService {
         };
       }
 
-      // Prepare the request body with root.customer[] structure
-      const requestBody = {
-        root: {
-          customer: [
+      // Prepare the request body with root.customer[] structure  
+      const customerObject: any = {
+        mobile: cleanedMobile
+      };
+      
+      // Add direct properties (firstname, lastname)
+      if (updates.firstname) {
+        customerObject.firstname = updates.firstname;
+      }
+      if (updates.lastname) {
+        customerObject.lastname = updates.lastname;
+      }
+      
+      // Add custom_fields for nationality (only if not empty or "Please select")
+      if (updates.nationality && updates.nationality !== 'Please select' && updates.nationality.trim() !== '') {
+        customerObject.custom_fields = {
+          field: [
             {
-              mobile: cleanedMobile,
-              ...updates
+              name: "nationality",
+              value: updates.nationality
             }
           ]
+        };
+      }
+      
+      // Add extended_fields for date of birth (only if not empty)
+      if (updates.dob && updates.dob.trim() !== '') {
+        customerObject.extended_fields = {
+          field: [
+            {
+              name: "dob_date",
+              value: updates.dob
+            }
+          ]
+        };
+      }
+      
+      const requestBody = {
+        root: {
+          customer: [customerObject]
         }
       };
 
@@ -787,8 +818,30 @@ class CapillaryApiService {
         root: {
           customer: [
             {
-              ...customerData,
-              mobile: cleanedMobile
+              firstname: customerData.firstname,
+              lastname: customerData.lastname,
+              mobile: cleanedMobile,
+              email: customerData.email,
+              ...(customerData.nationality && customerData.nationality !== 'Please select' ? {
+                custom_fields: {
+                  field: [
+                    {
+                      name: "nationality",
+                      value: customerData.nationality
+                    }
+                  ]
+                }
+              } : {}),
+              ...(customerData.dob ? {
+                extended_fields: {
+                  field: [
+                    {
+                      name: "dob_date", 
+                      value: customerData.dob
+                    }
+                  ]
+                }
+              } : {})
             }
           ]
         }

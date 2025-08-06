@@ -40,8 +40,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.log('🔐 UserContext: No authenticated session found');
         setPhoneNumber(null);
         
-        // Only redirect if we should redirect and not in auth flow
-        if (shouldRedirect && !isInAuthFlow) {
+        // Only redirect if we should redirect, not in auth flow, and user was previously authenticated
+        if (shouldRedirect && !isInAuthFlow && phoneNumber !== null) {
           console.log('🔐 UserContext: Session expired - redirecting to login');
           // Use replace to avoid navigation stack issues
           setTimeout(() => {
@@ -53,6 +53,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }, 100);
         } else if (shouldRedirect && isInAuthFlow) {
           console.log('🔐 UserContext: In auth flow, skipping redirect to prevent loop');
+        } else if (shouldRedirect && phoneNumber === null) {
+          console.log('🔐 UserContext: User was never authenticated, skipping redirect');
         }
       }
     } catch (error) {
@@ -65,16 +67,16 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const startSessionCheck = () => {
-    // Don't start session check if already running or in auth flow
-    if (sessionCheckInterval.current || isInAuthFlow) {
+    // Don't start session check if already running, in auth flow, or user is not authenticated
+    if (sessionCheckInterval.current || isInAuthFlow || !isAuthenticated) {
       return;
     }
     
     // Check session every 5 minutes
     sessionCheckInterval.current = setInterval(() => {
-      // Skip session check if in auth flow to prevent interrupting login/OTP
-      if (isInAuthFlow) {
-        console.log('🔐 UserContext: Skipping session check - in auth flow');
+      // Skip session check if in auth flow or not authenticated to prevent interrupting login/OTP
+      if (isInAuthFlow || !isAuthenticated) {
+        console.log('🔐 UserContext: Skipping session check - in auth flow or not authenticated');
         return;
       }
       
@@ -178,8 +180,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Start/stop session check based on authentication status and auth flow
   useEffect(() => {
     if (isAuthenticated && !isInAuthFlow) {
+      console.log('🔐 UserContext: Starting session check - user authenticated');
       startSessionCheck();
     } else {
+      console.log('🔐 UserContext: Stopping session check - user not authenticated or in auth flow');
       stopSessionCheck();
     }
   }, [isAuthenticated, isInAuthFlow]);

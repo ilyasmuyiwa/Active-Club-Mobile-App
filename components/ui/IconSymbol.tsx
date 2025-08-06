@@ -20,6 +20,10 @@ const MAPPING = {
   'chevron.right': 'chevron-right',
   'chevron.left': 'chevron-left',
   'chevron.down': 'expand-more',
+  'arrow.left': 'arrow-back',
+  'arrow.right': 'arrow-forward',
+  'arrow.up': 'arrow-upward',
+  'arrow.down': 'arrow-downward',
   'gearshape.fill': 'settings',
   'questionmark.circle.fill': 'help',
   'doc.text.fill': 'description',
@@ -35,6 +39,10 @@ const MAPPING = {
   'paperclip': 'attach-file',
   'square.grid.2x2.fill': 'grid-view',
   'bell.fill': 'notifications',
+  'checkmark.circle.fill': 'check-circle',
+  'checkmark': 'check',
+  'circle': 'radio-button-unchecked',
+  'circle.fill': 'radio-button-checked',
 } as IconMapping;
 
 /**

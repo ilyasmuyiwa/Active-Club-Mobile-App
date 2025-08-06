@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { OtpSuccessSvg } from '../assets/OtpSuccess';
+import { ErrorIconSvg } from '../assets/ErrorIcon';
 
 const { width } = Dimensions.get('window');
 
@@ -17,6 +18,7 @@ interface SuccessAlertProps {
   onClose: () => void;
   title: string;
   message: string;
+  type?: 'success' | 'error';
 }
 
 const SuccessAlert: React.FC<SuccessAlertProps> = ({
@@ -24,7 +26,9 @@ const SuccessAlert: React.FC<SuccessAlertProps> = ({
   onClose,
   title,
   message,
+  type = 'success',
 }) => {
+  const isError = type === 'error';
   return (
     <Modal
       visible={visible}
@@ -33,17 +37,33 @@ const SuccessAlert: React.FC<SuccessAlertProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={styles.alertContainer}>
+        <View style={[
+          styles.alertContainer,
+          isError && styles.errorContainer
+        ]}>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>✕</Text>
+            <Text style={[
+              styles.closeButtonText,
+              isError && styles.errorCloseText
+            ]}>✕</Text>
           </TouchableOpacity>
           
           <View style={styles.iconContainer}>
-            <SvgXml xml={OtpSuccessSvg} width={100} height={100} />
+            <SvgXml 
+              xml={isError ? ErrorIconSvg : OtpSuccessSvg} 
+              width={100} 
+              height={100} 
+            />
           </View>
           
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.message}>{message}</Text>
+          <Text style={[
+            styles.title,
+            isError && styles.errorTitle
+          ]}>{title}</Text>
+          <Text style={[
+            styles.message,
+            isError && styles.errorMessage
+          ]}>{message}</Text>
         </View>
       </View>
     </Modal>
@@ -67,6 +87,12 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     alignItems: 'center',
     position: 'relative',
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+  },
+  errorContainer: {
+    borderColor: '#F44336',
+    backgroundColor: '#FFFFFF',
   },
   closeButton: {
     position: 'absolute',
@@ -82,6 +108,9 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontWeight: 'bold',
   },
+  errorCloseText: {
+    color: '#F44336',
+  },
   iconContainer: {
     marginBottom: 20,
   },
@@ -93,6 +122,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: 'Roboto',
   },
+  errorTitle: {
+    color: '#F44336',
+  },
   message: {
     fontSize: 16,
     color: '#333333',
@@ -100,6 +132,9 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontFamily: 'Roboto',
     paddingHorizontal: 10,
+  },
+  errorMessage: {
+    color: '#B71C1C',
   },
 });
 

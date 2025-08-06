@@ -4,8 +4,9 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { getNationalityOptions } from '../../utils/nationalities';
+import { capillaryApi } from '../../services/capillaryApi';
 import {
-  Alert,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -16,6 +17,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { getHeaderPaddingTop } from '../../utils/statusBar';
 
 interface FormData {
   title: 'Mr' | 'Ms';
@@ -32,10 +34,14 @@ interface FormData {
 const RegistrationScreen: React.FC = () => {
   const router = useRouter();
   const { phoneNumber } = useLocalSearchParams<{ phoneNumber: string }>();
+  
+  console.log('📱 Registration Screen - phoneNumber received:', phoneNumber);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showNationalityDropdown, setShowNationalityDropdown] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: '', message: '', type: 'error' as 'success' | 'error' });
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
 
   const nationalityOptions = getNationalityOptions();
 
@@ -141,16 +147,77 @@ const RegistrationScreen: React.FC = () => {
     );
   };
 
-  const handleCreateAccount = () => {
-    if (isFormValid()) {
-      // Show success alert
+  const handleCreateAccount = async () => {
+    if (isCreatingAccount) return;
+    
+    if (!isFormValid()) {
+      setAlertMessage({
+        title: 'Error',
+        message: 'Please fill in all required fields and accept the terms.',
+        type: 'error'
+      });
       setShowSuccessAlert(true);
-      setTimeout(() => {
-        setShowSuccessAlert(false);
-        router.replace('/(tabs)');
-      }, 2000);
-    } else {
-      Alert.alert('Error', 'Please fill in all required fields and accept the terms.');
+      return;
+    }
+
+    setIsCreatingAccount(true);
+    console.log('🔵 RegistrationScreen: Creating customer account...');
+    
+    try {
+      // Convert date format from DD/MM/YYYY to YYYY-MM-DD for API
+      let apiDateOfBirth = '';
+      if (formData.dateOfBirth) {
+        const parts = formData.dateOfBirth.split('/');
+        if (parts.length === 3) {
+          apiDateOfBirth = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+      }
+
+      const customerData = {
+        firstname: formData.firstName,
+        lastname: formData.lastName,
+        mobile: formData.mobileNumber,
+        nationality: formData.nationality,
+        dob: apiDateOfBirth
+      };
+
+      console.log('🔵 RegistrationScreen: Customer data:', customerData);
+
+      const result = await capillaryApi.registerCustomer(customerData);
+      
+      if (result.success) {
+        console.log('✅ RegistrationScreen: Customer registered successfully');
+        setAlertMessage({
+          title: `Welcome ${formData.firstName}!`,
+          message: result.message,
+          type: 'success'
+        });
+        setShowSuccessAlert(true);
+        
+        // Redirect to home screen after successful registration
+        setTimeout(() => {
+          setShowSuccessAlert(false);
+          router.replace('/(tabs)');
+        }, 2500);
+      } else {
+        console.log('❌ RegistrationScreen: Customer registration failed');
+        setAlertMessage({
+          title: 'Registration Failed',
+          message: result.message,
+          type: 'error'
+        });
+        setShowSuccessAlert(true);
+      }
+    } catch (error) {
+      console.error('🔴 RegistrationScreen: Error creating customer:', error);
+      setAlertMessage({
+        title: 'Registration Error',
+        message: 'An unexpected error occurred. Please try again.',
+        type: 'error'
+      });
+      setShowSuccessAlert(true);
+    } finally {
+      setIsCreatingAccount(false);
     }
   };
 
@@ -364,11 +431,15 @@ const RegistrationScreen: React.FC = () => {
           </View>
 
           <TouchableOpacity 
-            style={[styles.createButton, !isFormValid() && styles.createButtonDisabled]}
+            style={[styles.createButton, (!isFormValid() || isCreatingAccount) && styles.createButtonDisabled]}
             onPress={handleCreateAccount}
-            disabled={!isFormValid()}
+            disabled={!isFormValid() || isCreatingAccount}
           >
-            <Text style={styles.createButtonText}>Create account</Text>
+            {isCreatingAccount ? (
+              <ActivityIndicator color="#000000" size="small" />
+            ) : (
+              <Text style={styles.createButtonText}>Create account</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -393,7 +464,7 @@ const RegistrationScreen: React.FC = () => {
               value={selectedDate}
               mode="date"
               display="spinner"
-              onChange={(event, date) => {
+              onChange={(_, date) => {
                 if (date) {
                   setSelectedDate(date);
                   // Don't update form data here - only update when Done is pressed
@@ -409,8 +480,9 @@ const RegistrationScreen: React.FC = () => {
       <SuccessAlert
         visible={showSuccessAlert}
         onClose={() => setShowSuccessAlert(false)}
-        title={`Welcome ${formData.firstName || 'to Active Club'}!`}
-        message="Your Active Club account has been successfully created!"
+        title={alertMessage.title}
+        message={alertMessage.message}
+        type={alertMessage.type}
       />
     </KeyboardAvoidingView>
   );
@@ -425,7 +497,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: getHeaderPaddingTop(25),
     paddingBottom: 20,
     backgroundColor: '#FFFFFF',
   },

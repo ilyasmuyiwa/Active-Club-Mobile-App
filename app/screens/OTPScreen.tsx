@@ -4,8 +4,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { useUser } from '../../contexts/UserContext';
 import {
-  Alert,
-  Dimensions,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -19,29 +17,26 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { authService } from '../../services/authService';
+import { capillaryApi } from '../../services/capillaryApi';
+import { getHeaderPaddingTop } from '../../utils/statusBar';
 
-const { width, height } = Dimensions.get('window');
 
 const OtpScreen: React.FC = () => {
   const [otp, setOtp] = useState(['', '', '', '', '']);
   const [timer, setTimer] = useState(300); // 5 minutes (from API response)
   const [canResend, setCanResend] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-  const [successMessage, setSuccessMessage] = useState({ title: '', message: '' });
+  const [successMessage, setSuccessMessage] = useState({ title: '', message: '', type: 'success' as 'success' | 'error' });
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [isCheckingCustomer, setIsCheckingCustomer] = useState(false);
   const router = useRouter();
   const params = useLocalSearchParams<{ phoneNumber: string }>();
   const { checkAuthStatus, setAuthFlow } = useUser();
-  
-  console.log('🎯 OTP Screen - All params received:', params);
-  console.log('🎯 OTP Screen - phoneNumber param:', params.phoneNumber);
-  console.log('🎯 OTP Screen - phoneNumber type:', typeof params.phoneNumber);
-  console.log('🎯 OTP Screen - phoneNumber length:', params.phoneNumber?.length);
-  
   const phoneNumber = params.phoneNumber;
   
   const inputRefs = useRef<Array<TextInput | null>>([]);
+
 
   useEffect(() => {
     // Set auth flow state when component mounts
@@ -63,7 +58,7 @@ const OtpScreen: React.FC = () => {
       // Clear auth flow state when component unmounts
       setAuthFlow(false);
     };
-  }, [setAuthFlow]);
+  }, []); // Remove setAuthFlow from dependency array
 
   const handleOtpChange = (value: string, index: number) => {
     // Handle iOS auto-fill - if user pastes/auto-fills multiple digits
@@ -120,12 +115,22 @@ const OtpScreen: React.FC = () => {
     const finalOtp = otpCode || otp.join('');
     
     if (finalOtp.length !== 5) {
-      Alert.alert('Error', 'Please enter the complete 5-digit OTP');
+      setSuccessMessage({
+        title: 'Error',
+        message: 'Please enter the complete 5-digit OTP',
+        type: 'error'
+      });
+      setShowSuccessAlert(true);
       return;
     }
 
     if (!phoneNumber) {
-      Alert.alert('Error', 'Phone number not found. Please try logging in again.');
+      setSuccessMessage({
+        title: 'Error',
+        message: 'Phone number not found. Please try logging in again.',
+        type: 'error'
+      });
+      setShowSuccessAlert(true);
       return;
     }
 
@@ -143,17 +148,33 @@ const OtpScreen: React.FC = () => {
         
         // Check if user exists in Capillary system
         console.log('🔍 OTP Screen: Checking customer in Capillary system...');
+        setIsCheckingCustomer(true);
         
         try {
-          // Import capillaryApi here to avoid circular dependencies
-          const { capillaryApi } = await import('../../services/capillaryApi');
+          console.log('🔍 OTP Screen: About to call getCustomerByMobile for:', phoneNumber);
+          console.log('🔍 OTP Screen: Platform:', Platform.OS);
+          console.log('🔍 OTP Screen: Current timestamp:', new Date().toISOString());
+          
+          // For Android, add a delay before calling the API
+          if (Platform.OS === 'android') {
+            console.log('⏳ OTP Screen: Adding 1s delay for Android');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log('⏳ OTP Screen: Delay completed, making API call now');
+          }
+          
+          console.log('🔍 OTP Screen: Calling getCustomerByMobile...');
           const customerResult = await capillaryApi.getCustomerByMobile(phoneNumber, true);
+          
+          console.log('🔍 OTP Screen: Capillary API call completed!');
+          console.log('🔍 OTP Screen: Response timestamp:', new Date().toISOString());
+          console.log('🔍 OTP Screen: Response data:', customerResult);
           
           if (customerResult.customer) {
             console.log('✅ OTP Screen: Customer found in Capillary, redirecting to home');
             setSuccessMessage({
               title: 'Welcome back!',
-              message: 'You have logged in successfully!'
+              message: 'You have logged in successfully!',
+              type: 'success'
             });
             setShowSuccessAlert(true);
             
@@ -166,74 +187,77 @@ const OtpScreen: React.FC = () => {
             console.log('⚠️ OTP Screen: Customer not found in Capillary (code 1012), redirecting to registration');
             setSuccessMessage({
               title: 'Complete Your Profile',
-              message: 'Please complete your registration to continue'
+              message: 'Please complete your registration to continue',
+              type: 'success'
             });
             setShowSuccessAlert(true);
             
             // Navigate to registration screen
             setTimeout(() => {
               setShowSuccessAlert(false);
-              router.replace('/screens/RegistrationScreen');
+              router.replace({
+                pathname: '/screens/RegistrationScreen',
+                params: { phoneNumber: phoneNumber }
+              });
             }, 2000);
           } else {
             // API error - show error popup, don't redirect to registration
             console.error('🔴 OTP Screen: Capillary API error:', customerResult.error);
-            Alert.alert(
-              'System Error',
-              customerResult.error?.message || 'Unable to verify your account. Please try again later.',
-              [
-                {
-                  text: 'Try Again',
-                  onPress: () => {
-                    // Allow user to try verification again
-                    setOtp(['', '', '', '', '']);
-                    inputRefs.current[0]?.focus();
-                  }
-                },
-                {
-                  text: 'Go Back',
-                  onPress: () => router.back()
-                }
-              ]
-            );
+            setSuccessMessage({
+              title: 'System Error',
+              message: customerResult.error?.message || 'Unable to verify your account. Please try again later.',
+              type: 'error'
+            });
+            setShowSuccessAlert(true);
+            // Clear OTP inputs for retry
+            setOtp(['', '', '', '', '']);
+            setTimeout(() => {
+              inputRefs.current[0]?.focus();
+            }, 500);
           }
         } catch (capillaryError) {
           console.error('🔴 OTP Screen: Unexpected error checking Capillary customer:', capillaryError);
           // Network or unexpected error - show error popup
-          Alert.alert(
-            'Connection Error',
-            'Unable to verify your account due to a network error. Please check your connection and try again.',
-            [
-              {
-                text: 'Try Again',
-                onPress: () => {
-                  // Allow user to try verification again
-                  setOtp(['', '', '', '', '']);
-                  inputRefs.current[0]?.focus();
-                }
-              },
-              {
-                text: 'Go Back',
-                onPress: () => router.back()
-              }
-            ]
-          );
+          setSuccessMessage({
+            title: 'Connection Error',
+            message: 'Unable to verify your account due to a network error. Please check your connection and try again.',
+            type: 'error'
+          });
+          setShowSuccessAlert(true);
+          // Clear OTP inputs for retry
+          setOtp(['', '', '', '', '']);
+          setTimeout(() => {
+            inputRefs.current[0]?.focus();
+          }, 500);
+        } finally {
+          setIsCheckingCustomer(false);
         }
       } else {
-        Alert.alert('Invalid OTP', 'The OTP you entered is incorrect. Please try again.');
+        setSuccessMessage({
+          title: 'Invalid OTP',
+          message: 'The OTP you entered is incorrect. Please try again.',
+          type: 'error'
+        });
+        setShowSuccessAlert(true);
         // Clear OTP inputs
         setOtp(['', '', '', '', '']);
-        inputRefs.current[0]?.focus();
+        setTimeout(() => {
+          inputRefs.current[0]?.focus();
+        }, 500);
       }
     } catch (error) {
       console.error('🔴 OTP Screen: Error verifying OTP:', error);
-      Alert.alert(
-        'Verification Failed', 
-        'Unable to verify OTP. Please check your internet connection and try again.'
-      );
+      setSuccessMessage({
+        title: 'Verification Failed',
+        message: 'Unable to verify OTP. Please check your internet connection and try again.',
+        type: 'error'
+      });
+      setShowSuccessAlert(true);
       // Clear OTP inputs
       setOtp(['', '', '', '', '']);
-      inputRefs.current[0]?.focus();
+      setTimeout(() => {
+        inputRefs.current[0]?.focus();
+      }, 500);
     } finally {
       setIsVerifying(false);
     }
@@ -253,16 +277,28 @@ const OtpScreen: React.FC = () => {
         setCanResend(false);
         setOtp(['', '', '', '', '']);
         inputRefs.current[0]?.focus();
-        Alert.alert('OTP Sent', 'A new OTP has been sent to your phone');
+        setSuccessMessage({
+          title: 'OTP Sent',
+          message: 'A new OTP has been sent to your phone',
+          type: 'success'
+        });
+        setShowSuccessAlert(true);
       } else {
-        Alert.alert('Error', response.message || 'Failed to resend OTP. Please try again.');
+        setSuccessMessage({
+          title: 'Error',
+          message: response.message || 'Failed to resend OTP. Please try again.',
+          type: 'error'
+        });
+        setShowSuccessAlert(true);
       }
     } catch (error) {
       console.error('🔴 OTP Screen: Error resending OTP:', error);
-      Alert.alert(
-        'Resend Failed', 
-        'Unable to resend OTP. Please check your internet connection and try again.'
-      );
+      setSuccessMessage({
+        title: 'Resend Failed',
+        message: 'Unable to resend OTP. Please check your internet connection and try again.',
+        type: 'error'
+      });
+      setShowSuccessAlert(true);
     } finally {
       setIsResending(false);
     }
@@ -316,7 +352,7 @@ const OtpScreen: React.FC = () => {
               keyboardType="numeric"
               maxLength={index === 0 ? 5 : 1} // Allow paste/auto-fill in first field
               selectTextOnFocus
-              editable={!isVerifying}
+              editable={!isVerifying && !isCheckingCustomer}
               textContentType={index === 0 ? "oneTimeCode" : "none"} // Enable auto-fill for first field only
               autoComplete={index === 0 ? "one-time-code" : "off"} // Android support
             />
@@ -342,11 +378,11 @@ const OtpScreen: React.FC = () => {
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={[styles.verifyButton, (otp.join('').length !== 5 || isVerifying) && styles.verifyButtonDisabled]}
+          style={[styles.verifyButton, (otp.join('').length !== 5 || isVerifying || isCheckingCustomer) && styles.verifyButtonDisabled]}
           onPress={() => handleVerify()}
-          disabled={otp.join('').length !== 5 || isVerifying}
+          disabled={otp.join('').length !== 5 || isVerifying || isCheckingCustomer}
         >
-          {isVerifying ? (
+          {(isVerifying || isCheckingCustomer) ? (
             <ActivityIndicator color="#000000" size="small" />
           ) : (
             <Text style={styles.verifyButtonText}>Verify</Text>
@@ -361,6 +397,7 @@ const OtpScreen: React.FC = () => {
         onClose={() => setShowSuccessAlert(false)}
         title={successMessage.title}
         message={successMessage.message}
+        type={successMessage.type}
       />
     </View>
   );
@@ -375,7 +412,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   customHeader: {
-    paddingTop: 50,
+    paddingTop: getHeaderPaddingTop(15),
     paddingHorizontal: 20,
     paddingBottom: 10,
     backgroundColor: '#F5F5F5',

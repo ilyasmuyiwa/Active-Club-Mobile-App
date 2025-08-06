@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   SafeAreaView,
   ScrollView,
   Image,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
@@ -21,11 +20,12 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { getNationalityOptions } from '../../utils/nationalities';
 import { capillaryApi, CustomerData } from '../../services/capillaryApi';
 import { useUser } from '../../contexts/UserContext';
+import SuccessAlert from '@/components/SuccessAlert';
 
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { phoneNumber } = useUser();
+  const { phoneNumber, refreshCustomerData } = useUser();
   
   const [customerData, setCustomerData] = useState<CustomerData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,6 +40,17 @@ export default function ProfileScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showNationalityDropdown, setShowNationalityDropdown] = useState(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: '', message: '', type: 'success' as 'success' | 'error' });
+  const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Track original values to detect changes
+  const [originalData, setOriginalData] = useState({
+    firstName: '',
+    lastName: '',
+    nationality: 'Qatar',
+    dateOfBirth: ''
+  });
   
   // Use phone number from context, fallback to demo number
   const userMobile = phoneNumber || '98988787';
@@ -61,6 +72,11 @@ export default function ProfileScreen() {
       fetchCustomerData();
     }
   }, [userMobile]);
+
+  // Clear alert state when component mounts to prevent stale alerts
+  useEffect(() => {
+    setShowSuccessAlert(false);
+  }, []);
   
   // Debug state changes
   useEffect(() => {
@@ -113,8 +129,10 @@ export default function ProfileScreen() {
     // Only set fields if they exist in API, otherwise leave empty
     console.log('🔵 ProfileScreen: Setting firstName:', data.firstname);
     console.log('🔵 ProfileScreen: Setting lastName:', data.lastname);
-    setFirstName(data.firstname || '');
-    setLastName(data.lastname || '');
+    const firstName = data.firstname || '';
+    const lastName = data.lastname || '';
+    setFirstName(firstName);
+    setLastName(lastName);
     
     // Format mobile number properly - API already includes country code
     if (data.mobile) {
@@ -132,24 +150,22 @@ export default function ProfileScreen() {
     
     // Try to get nationality from custom fields - keep default if not found
     const nationalityField = capillaryApi.getCustomField(data, 'nationality');
-    if (nationalityField) {
-      setNationality(nationalityField);
-    } else {
-      setNationality('Qatar'); // Keep default
-    }
+    const nationality = nationalityField || 'Qatar';
+    setNationality(nationality);
     
     // Try to get date of birth from extended fields - API uses 'dob_date'
     const dobField = capillaryApi.getExtendedField(data, 'dob_date') || 
                      capillaryApi.getExtendedField(data, 'date_of_birth') ||
                      capillaryApi.getCustomField(data, 'date_of_birth');
+    let dateOfBirth = '';
     if (dobField) {
       // Parse API date format (YYYY-MM-DD) to display format (DD/MM/YYYY)
       try {
         const dateObj = new Date(dobField);
         if (!isNaN(dateObj.getTime())) {
           setSelectedDate(dateObj);
-          const formattedDate = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getFullYear()}`;
-          setDateOfBirth(formattedDate);
+          dateOfBirth = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getFullYear()}`;
+          setDateOfBirth(dateOfBirth);
         }
       } catch (e) {
         console.log('Could not parse date:', dobField);
@@ -158,6 +174,14 @@ export default function ProfileScreen() {
     } else {
       setDateOfBirth(''); // Leave empty if no date found
     }
+    
+    // Store original values for change detection
+    setOriginalData({
+      firstName,
+      lastName,
+      nationality,
+      dateOfBirth
+    });
     
     console.log('✅ ProfileScreen: Form population complete');
   };
@@ -170,13 +194,115 @@ export default function ProfileScreen() {
     setDateOfBirth('');
     setNationality('Qatar'); // Keep default nationality
     setSelectedDate(new Date()); // Keep default date
+    
+    // Clear original data as well
+    setOriginalData({
+      firstName: '',
+      lastName: '',
+      nationality: 'Qatar',
+      dateOfBirth: ''
+    });
   };
 
-  const handleSave = () => {
-    if (error) {
-      Alert.alert('Info', 'Profile updates will be saved locally. Connection will be restored automatically.');
-    } else {
-      Alert.alert('Success', 'Profile updated successfully!');
+  // Check if any data has actually changed
+  const hasDataChanged = () => {
+    const currentData = {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      nationality: nationality.trim(),
+      dateOfBirth: dateOfBirth.trim()
+    };
+    
+    const originalDataTrimmed = {
+      firstName: originalData.firstName.trim(),
+      lastName: originalData.lastName.trim(),
+      nationality: originalData.nationality.trim(),
+      dateOfBirth: originalData.dateOfBirth.trim()
+    };
+    
+    return (
+      currentData.firstName !== originalDataTrimmed.firstName ||
+      currentData.lastName !== originalDataTrimmed.lastName ||
+      currentData.nationality !== originalDataTrimmed.nationality ||
+      currentData.dateOfBirth !== originalDataTrimmed.dateOfBirth
+    );
+  };
+
+  const handleSave = async () => {
+    if (isUpdating) return;
+    
+    // Check if any data has actually changed
+    if (!hasDataChanged()) {
+      console.log('🔵 ProfileScreen: No changes detected, skipping API call');
+      setAlertMessage({
+        title: 'No Changes',
+        message: 'No changes were made to your profile.',
+        type: 'error'
+      });
+      setShowSuccessAlert(true);
+      return;
+    }
+    
+    setIsUpdating(true);
+    console.log('🔵 ProfileScreen: Changes detected, updating profile...');
+    
+    try {
+      // Convert date format from DD/MM/YYYY to YYYY-MM-DD for API
+      let apiDateOfBirth = '';
+      if (dateOfBirth) {
+        const parts = dateOfBirth.split('/');
+        if (parts.length === 3) {
+          apiDateOfBirth = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+      }
+      
+      const updateData = {
+        firstname: firstName.trim(),
+        lastname: lastName.trim(),
+        nationality: nationality.trim(),
+        dob: apiDateOfBirth
+      };
+      
+      console.log('🔵 ProfileScreen: Update data:', updateData);
+      
+      const result = await capillaryApi.updateCustomerProfile(userMobile, updateData);
+      
+      if (result.success) {
+        console.log('✅ ProfileScreen: Profile updated successfully');
+        setAlertMessage({
+          title: 'Success!',
+          message: result.message,
+          type: 'success'
+        });
+        setShowSuccessAlert(true);
+        
+        // Trigger refresh in HomeScreen and other components
+        refreshCustomerData();
+        
+        // Auto-close alert and refresh local data after successful update
+        setTimeout(() => {
+          setShowSuccessAlert(false);
+          fetchCustomerData();
+        }, 1500);
+      } else {
+        console.log('❌ ProfileScreen: Profile update failed');
+        setAlertMessage({
+          title: 'Update Failed',
+          message: result.message,
+          type: 'error'
+        });
+        setShowSuccessAlert(true);
+      }
+    } catch (error) {
+      console.error('🔴 ProfileScreen: Error updating profile:', error);
+      setAlertMessage({
+        title: 'Error',
+        message: 'An unexpected error occurred. Please try again.',
+        type: 'error'
+      });
+      setShowSuccessAlert(true);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -260,7 +386,14 @@ export default function ProfileScreen() {
           <View style={styles.profileSection}>
             <TouchableOpacity 
               style={styles.profileImageContainer}
-              onPress={() => Alert.alert('Info', 'Profile picture change coming soon!')}
+              onPress={() => {
+                setAlertMessage({
+                  title: 'Info',
+                  message: 'Profile picture change coming soon!',
+                  type: 'error'
+                });
+                setShowSuccessAlert(true);
+              }}
             >
               <View style={styles.avatarContainer}>
                 <IconSymbol name="person.fill" size={40} color="#666" />
@@ -327,6 +460,7 @@ export default function ProfileScreen() {
                 />
                 <IconSymbol name="lock.fill" size={16} color={colors.icon} style={styles.lockIcon} />
               </View>
+              <Text style={styles.helperText}>Mobile number cannot be changed</Text>
             </View>
 
             <View style={styles.inputGroup}>
@@ -349,6 +483,7 @@ export default function ProfileScreen() {
                 />
                 <IconSymbol name="lock.fill" size={16} color={colors.icon} style={styles.lockIcon} />
               </View>
+              <Text style={styles.helperText}>Email cannot be changed</Text>
             </View>
 
             <View style={styles.inputGroup}>
@@ -426,10 +561,15 @@ export default function ProfileScreen() {
             </View>
 
             <TouchableOpacity
-              style={styles.saveButton}
+              style={[styles.saveButton, isUpdating && styles.saveButtonDisabled]}
               onPress={handleSave}
+              disabled={isUpdating}
             >
-              <Text style={styles.saveButtonText}>Save</Text>
+              {isUpdating ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                <Text style={styles.saveButtonText}>Save</Text>
+              )}
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -466,6 +606,14 @@ export default function ProfileScreen() {
           </View>
         </View>
       )}
+      
+      <SuccessAlert
+        visible={showSuccessAlert}
+        onClose={() => setShowSuccessAlert(false)}
+        title={alertMessage.title}
+        message={alertMessage.message}
+        type={alertMessage.type}
+      />
     </SafeAreaView>
   );
 }
@@ -535,6 +683,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     opacity: 0.8,
   },
+  helperText: {
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
   input: {
     padding: 15,
     borderRadius: 10,
@@ -566,6 +720,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 20,
+  },
+  saveButtonDisabled: {
+    backgroundColor: 'rgba(241, 194, 41, 0.5)',
   },
   saveButtonText: {
     color: 'white',

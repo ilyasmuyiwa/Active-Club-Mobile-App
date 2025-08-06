@@ -11,6 +11,8 @@ interface UserContextType {
   logout: () => Promise<void>;
   checkAuthStatus: () => Promise<void>;
   setAuthFlow: (inFlow: boolean) => void;
+  refreshCustomerData: () => void;
+  onCustomerDataRefresh: (callback: () => void) => () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -21,6 +23,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
   const [isInAuthFlow, setIsInAuthFlow] = useState(false);
   const sessionCheckInterval = useRef<NodeJS.Timeout | null>(null);
+  const customerDataRefreshCallbacks = useRef<Set<() => void>>(new Set());
 
   const checkAuthStatus = async (shouldRedirect: boolean = false) => {
     try {
@@ -100,6 +103,21 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsInAuthFlow(inFlow);
   };
 
+  const refreshCustomerData = () => {
+    console.log('🔄 UserContext: Triggering customer data refresh');
+    customerDataRefreshCallbacks.current.forEach(callback => callback());
+  };
+
+  const onCustomerDataRefresh = (callback: () => void) => {
+    console.log('🔄 UserContext: Registered customer data refresh callback');
+    customerDataRefreshCallbacks.current.add(callback);
+    
+    // Return cleanup function
+    return () => {
+      customerDataRefreshCallbacks.current.delete(callback);
+    };
+  };
+
   useEffect(() => {
     checkAuthStatus();
     
@@ -126,7 +144,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [isAuthenticated]);
 
-  console.log('🔐 UserContext: Current state - phone:', phoneNumber, 'authenticated:', isAuthenticated, 'loading:', isLoading);
+  // Debug logging moved to useEffect to prevent render loops
+  useEffect(() => {
+    console.log('🔐 UserContext: Current state - phone:', phoneNumber, 'authenticated:', isAuthenticated, 'loading:', isLoading);
+  }, [phoneNumber, isAuthenticated, isLoading]);
 
   return (
     <UserContext.Provider value={{ 
@@ -136,7 +157,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setPhoneNumber: setPhoneNumberWithUpdate, 
       logout, 
       checkAuthStatus,
-      setAuthFlow
+      setAuthFlow,
+      refreshCustomerData,
+      onCustomerDataRefresh
     }}>
       {children}
     </UserContext.Provider>

@@ -445,8 +445,8 @@ export default function UserLevelScreen() {
             <View style={styles.starContainer}>
               <Image
                 source={
-                  (membershipData.currentLevel === 'ActiveGo' || membershipData.currentLevel === 'Go') ? require('../../assets/notifications/star_third.png') :
-                  (membershipData.currentLevel === 'ActiveFit' || membershipData.currentLevel === 'Fit') ? require('../../assets/notifications/star_second.png') :
+                  (membershipData?.currentLevel === 'ActiveGo' || membershipData?.currentLevel === 'Go') ? require('../../assets/notifications/star_third.png') :
+                  (membershipData?.currentLevel === 'ActiveFit' || membershipData?.currentLevel === 'Fit') ? require('../../assets/notifications/star_second.png') :
                   require('../../assets/notifications/star_first.png')
                 }
                 style={{ width: 60, height: 60 }}
@@ -458,7 +458,7 @@ export default function UserLevelScreen() {
                 You are an Active Club
               </Text>
               <Text style={[styles.statusLevel, { color: colors.text }]}>
-                {membershipData.currentLevel.startsWith('Active') ? membershipData.currentLevel : `Active${membershipData.currentLevel}`}
+                {membershipData?.currentLevel?.startsWith('Active') ? membershipData.currentLevel : `Active${membershipData?.currentLevel || 'Go'}`}
               </Text>
               <TouchableOpacity onPress={() => router.push('/(tabs)/activities')}>
                 <Text style={styles.pointsActivity}>Points activity</Text>
@@ -474,20 +474,20 @@ export default function UserLevelScreen() {
         <View style={styles.combinedProgressCard}>
           {/* Points Arc Section */}
           <View style={styles.arcContainer}>
-            <ProgressArc percentage={membershipData.progressPercentage} />
+            <ProgressArc percentage={membershipData?.progressPercentage || 0} />
             
             {/* Content Inside Arc */}
             <View style={styles.arcContent}>
               <View style={styles.pointsInfo}>
-                <Text style={styles.pointsValue}>{membershipData.currentPoints.toLocaleString()}</Text>
+                <Text style={styles.pointsValue}>{membershipData?.currentPoints?.toLocaleString() || '0'}</Text>
                 <Text style={styles.pointsLabel}>pts</Text>
               </View>
-              {membershipData.expiryAmount && membershipData.expiryDate && (
+              {membershipData?.expiryAmount && membershipData?.expiryDate && (
                 <Text style={styles.expiryText}>{membershipData.expiryAmount}pts expiring on {membershipData.expiryDate}</Text>
               )}
               
               <View style={styles.rewardInfo}>
-                <Text style={styles.rewardValue}>{membershipData.currentReward}</Text>
+                <Text style={styles.rewardValue}>{membershipData?.currentReward || '0'}</Text>
                 <Text style={styles.rewardCurrency}>QR</Text>
               </View>
               <Text style={styles.rewardLabel}>TOTAL REDEEMABLE REWARD</Text>

@@ -22,8 +22,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isInAuthFlow, setIsInAuthFlow] = useState(false);
-  const sessionCheckInterval = useRef<NodeJS.Timeout | null>(null);
+  const sessionCheckInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const customerDataRefreshCallbacks = useRef<Set<() => void>>(new Set());
+  const authFlowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const checkAuthStatus = async (shouldRedirect: boolean = false) => {
     try {
@@ -42,8 +43,13 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Only redirect if we should redirect and not in auth flow
         if (shouldRedirect && !isInAuthFlow) {
           console.log('🔐 UserContext: Session expired - redirecting to login');
+          // Use replace to avoid navigation stack issues
           setTimeout(() => {
-            router.replace('/screens/LoginScreen');
+            try {
+              router.replace('/screens/LoginScreen');
+            } catch (error) {
+              console.error('🔐 UserContext: Navigation error:', error);
+            }
           }, 100);
         } else if (shouldRedirect && isInAuthFlow) {
           console.log('🔐 UserContext: In auth flow, skipping redirect to prevent loop');
@@ -59,8 +65,19 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const startSessionCheck = () => {
+    // Don't start session check if already running or in auth flow
+    if (sessionCheckInterval.current || isInAuthFlow) {
+      return;
+    }
+    
     // Check session every 5 minutes
     sessionCheckInterval.current = setInterval(() => {
+      // Skip session check if in auth flow to prevent interrupting login/OTP
+      if (isInAuthFlow) {
+        console.log('🔐 UserContext: Skipping session check - in auth flow');
+        return;
+      }
+      
       console.log('🔐 UserContext: Periodic session check');
       checkAuthStatus(true);
     }, 5 * 60 * 1000);
@@ -84,12 +101,22 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       console.log('🔐 UserContext: Logging out user');
       stopSessionCheck();
+      setIsInAuthFlow(true); // Set auth flow to prevent session checks during logout
       await authService.logout();
       setIsAuthenticated(false);
       setPhoneNumber(null);
-      console.log('🔐 UserContext: User logged out successfully');
+      
+      console.log('🔐 UserContext: User logged out successfully, redirecting to login');
+      
+      // Force navigate to login screen after logout
+      setTimeout(() => {
+        setIsInAuthFlow(false);
+        router.replace('/screens/LoginScreen');
+      }, 100);
+      
     } catch (error) {
       console.error('🔐 UserContext: Error during logout:', error);
+      setIsInAuthFlow(false);
     }
   };
 
@@ -100,7 +127,21 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const setAuthFlow = (inFlow: boolean) => {
     console.log('🔐 UserContext: Setting auth flow:', inFlow);
+    
+    // Clear any existing timeout
+    if (authFlowTimeoutRef.current) {
+      clearTimeout(authFlowTimeoutRef.current);
+    }
+    
     setIsInAuthFlow(inFlow);
+    
+    // If setting auth flow to false, add a safety timeout to ensure session checks resume
+    if (!inFlow) {
+      authFlowTimeoutRef.current = setTimeout(() => {
+        console.log('🔐 UserContext: Auth flow timeout - ensuring session checks can resume');
+        setIsInAuthFlow(false);
+      }, 1000);
+    }
   };
 
   const refreshCustomerData = () => {
@@ -118,31 +159,30 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   };
 
+  // Initial auth check only
   useEffect(() => {
     checkAuthStatus();
-    
-    // Start session monitoring when authenticated
-    if (isAuthenticated) {
-      startSessionCheck();
-    }
     
     // Listen for app state changes
     const appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
     
     return () => {
       stopSessionCheck();
+      if (authFlowTimeoutRef.current) {
+        clearTimeout(authFlowTimeoutRef.current);
+      }
       appStateSubscription?.remove();
     };
-  }, [isAuthenticated]);
+  }, []);
 
-  // Start session check when user becomes authenticated
+  // Start/stop session check based on authentication status and auth flow
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !isInAuthFlow) {
       startSessionCheck();
     } else {
       stopSessionCheck();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isInAuthFlow]);
 
   // Debug logging moved to useEffect to prevent render loops
   useEffect(() => {

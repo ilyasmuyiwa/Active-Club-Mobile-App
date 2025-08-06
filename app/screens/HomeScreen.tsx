@@ -30,7 +30,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [qrModalVisible, setQrModalVisible] = useState(false);
-  const { phoneNumber, onCustomerDataRefresh } = useUser();
+  const { phoneNumber, isAuthenticated, isLoading: userLoading, onCustomerDataRefresh } = useUser();
 
   // No fallback data - return null when API data is not available
 
@@ -39,22 +39,26 @@ export default function HomeScreen() {
 
 
   useEffect(() => {
-    if (userMobile) {
+    // Only fetch customer data if user is authenticated and has a phone number
+    if (isAuthenticated && userMobile && !userLoading) {
+      console.log('🔵 HomeScreen: User authenticated, fetching customer data');
       fetchCustomerData();
+    } else if (!isAuthenticated && !userLoading) {
+      console.log('⚠️ HomeScreen: User not authenticated, skipping data fetch');
     }
-  }, [userMobile]);
+  }, [isAuthenticated, userMobile, userLoading]);
 
   // Listen for customer data refresh events
   useEffect(() => {
     const unsubscribe = onCustomerDataRefresh(() => {
       console.log('🔄 HomeScreen: Received customer data refresh event');
-      if (userMobile) {
+      if (isAuthenticated && userMobile && !userLoading) {
         fetchCustomerData();
       }
     });
 
     return unsubscribe;
-  }, [userMobile, onCustomerDataRefresh]);
+  }, [isAuthenticated, userMobile, userLoading, onCustomerDataRefresh]);
 
   const fetchCustomerData = async () => {
     try {
@@ -357,7 +361,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
               <View style={styles.welcomeText}>
                 <Text style={styles.welcomeLabel}>Welcome back,</Text>
-                <Text style={styles.userName}>{membershipData.userName}</Text>
+                <Text style={styles.userName}>{membershipData?.userName || 'User'}</Text>
                 {error && (
                   <Text style={styles.errorText}>Using offline data</Text>
                 )}
@@ -376,7 +380,7 @@ export default function HomeScreen() {
               activeOpacity={0.95}
             >
               <Image
-                source={getCardImage(membershipData.tier)}
+                source={getCardImage(membershipData?.tier || 'Go')}
                 style={styles.cardBackground}
                 resizeMode="cover"
               />
@@ -384,11 +388,11 @@ export default function HomeScreen() {
               <View style={styles.cardHeader}>
                 <View style={styles.cardLogo}>
                   <Image
-                    source={getStarIcon(membershipData.tier)}
+                    source={getStarIcon(membershipData?.tier || 'Go')}
                     style={{ width: 32, height: 32 }}
                     resizeMode="contain"
                   />
-                  <Text style={styles.cardLogoText}>Active{membershipData.tier}</Text>
+                  <Text style={styles.cardLogoText}>Active{membershipData?.tier || 'Go'}</Text>
                 </View>
                 <View style={styles.brandContainer}>
                   <SvgXml 
@@ -404,20 +408,20 @@ export default function HomeScreen() {
                 {/* Centered Arc Section */}
                 <View style={styles.arcWrapper}>
                   <View style={styles.arcContainer}>
-                    <ProgressArc percentage={membershipData.progressPercentage} />
+                    <ProgressArc percentage={membershipData?.progressPercentage || 0} />
                     
                     {/* Content Inside Arc */}
                     <View style={styles.arcContent}>
                       <View style={styles.pointsInfo}>
-                        <Text style={styles.pointsValue}>{membershipData.points.toLocaleString()}</Text>
+                        <Text style={styles.pointsValue}>{membershipData?.points?.toLocaleString() || '0'}</Text>
                         <Text style={styles.pointsLabel}>pts</Text>
                       </View>
-                      {membershipData.pointsExpiryAmount && membershipData.pointsExpiry && (
+                      {membershipData?.pointsExpiryAmount && membershipData?.pointsExpiry && (
                         <Text style={styles.expiryText}>{membershipData.pointsExpiryAmount}pts expiring on {membershipData.pointsExpiry}</Text>
                       )}
                       
                       <View style={styles.rewardInfo}>
-                        <Text style={styles.rewardAmount}>{membershipData.rewardAmount}</Text>
+                        <Text style={styles.rewardAmount}>{membershipData?.rewardAmount || '0'}</Text>
                         <Text style={styles.rewardCurrency}>QR</Text>
                       </View>
                       <Text style={styles.rewardLabel}>TOTAL REDEEMABLE REWARD</Text>
@@ -428,17 +432,17 @@ export default function HomeScreen() {
                 {/* Next Reward in bottom right */}
                 <View style={styles.nextRewardContainer}>
                   <Text style={styles.nextRewardLabel}>{
-                    membershipData.tier === 'ActiveGo' || membershipData.tier === 'Go' ? 'Unlock ActiveFit' :
-                    membershipData.tier === 'ActiveFit' || membershipData.tier === 'Fit' ? 'Unlock ActivePro' :
+                    membershipData?.tier === 'ActiveGo' || membershipData?.tier === 'Go' ? 'Unlock ActiveFit' :
+                    membershipData?.tier === 'ActiveFit' || membershipData?.tier === 'Fit' ? 'Unlock ActivePro' :
                     'ActivePro Member'
                   }</Text>
-                  {membershipData.nextRewardTarget ? (
+                  {membershipData?.nextRewardTarget ? (
                     <Text style={styles.nextRewardValue}>
-                      {membershipData.lifetimePurchases.toLocaleString()}/{membershipData.nextRewardTarget.toLocaleString()}
+                      {membershipData?.lifetimePurchases?.toLocaleString() || '0'}/{membershipData.nextRewardTarget.toLocaleString()}
                     </Text>
                   ) : (
                     <Text style={styles.nextRewardValue}>
-                      {membershipData.lifetimePurchases.toLocaleString()}
+                      {membershipData?.lifetimePurchases?.toLocaleString() || '0'}
                     </Text>
                   )}
                 </View>

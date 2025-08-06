@@ -30,18 +30,9 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [qrModalVisible, setQrModalVisible] = useState(false);
-  const { phoneNumber } = useUser();
+  const { phoneNumber, onCustomerDataRefresh } = useUser();
 
-  // Fallback data for when API fails or no customer data
-  const fallbackData = {
-    points: 22426,
-    pointsExpiry: '03/2025',
-    rewardAmount: 736,
-    nextRewardTarget: 25000,
-    progressPercentage: (22426 / 25000) * 100,
-    userName: 'Jhon Smith',
-    tier: 'ActiveFit',
-  };
+  // No fallback data - return null when API data is not available
 
   // Use phone number from context, fallback to demo number
   const userMobile = phoneNumber || '98988787';
@@ -52,6 +43,18 @@ export default function HomeScreen() {
       fetchCustomerData();
     }
   }, [userMobile]);
+
+  // Listen for customer data refresh events
+  useEffect(() => {
+    const unsubscribe = onCustomerDataRefresh(() => {
+      console.log('🔄 HomeScreen: Received customer data refresh event');
+      if (userMobile) {
+        fetchCustomerData();
+      }
+    });
+
+    return unsubscribe;
+  }, [userMobile, onCustomerDataRefresh]);
 
   const fetchCustomerData = async () => {
     try {
@@ -101,21 +104,77 @@ export default function HomeScreen() {
     }
   };
 
-  // Calculate membership data from API or use fallback
+  // Calculate points expiry from transaction data
+  const calculatePointsExpiry = () => {
+    if (!transactions || transactions.length === 0) {
+      return null; // No expiry info when no transactions
+    }
+
+    // Calculate expiry for each transaction (billing_time + 12 months)
+    const transactionsWithExpiry = transactions.map(transaction => {
+      const billingDate = new Date(transaction.billing_time);
+      const expiryDate = new Date(billingDate);
+      expiryDate.setFullYear(billingDate.getFullYear() + 1); // Add 12 months
+      
+      const pointsEarned = parseFloat(transaction.points.issued) || 0;
+      
+      return {
+        transaction,
+        expiryDate,
+        pointsEarned,
+        billingDate
+      };
+    });
+
+    // Filter to only transactions with earned points
+    const earningTransactions = transactionsWithExpiry.filter(t => t.pointsEarned > 0);
+    
+    if (earningTransactions.length === 0) {
+      return null; // No expiry info when no earning transactions
+    }
+
+    // Sort by expiry date (earliest first)
+    earningTransactions.sort((a, b) => a.expiryDate.getTime() - b.expiryDate.getTime());
+    
+    // Get the transaction closest to expiry
+    const closestToExpiry = earningTransactions[0];
+    
+    // Format expiry date as MM/YYYY
+    const formattedExpiry = `${String(closestToExpiry.expiryDate.getMonth() + 1).padStart(2, '0')}/${closestToExpiry.expiryDate.getFullYear()}`;
+    
+    console.log('🔵 Points expiry calculation:', {
+      totalTransactions: transactions.length,
+      earningTransactions: earningTransactions.length,
+      closestExpiry: formattedExpiry,
+      pointsAmount: Math.round(closestToExpiry.pointsEarned),
+      billingDate: closestToExpiry.billingDate.toDateString()
+    });
+    
+    return {
+      pointsAmount: Math.round(closestToExpiry.pointsEarned),
+      expiryDate: formattedExpiry
+    };
+  };
+
+  // Calculate membership data from API only - no fallback
   const getMembershipData = () => {
     if (!customerData) {
-      return fallbackData;
+      return null;
     }
 
     const points = capillaryApi.getCustomerPoints(customerData);
+    const lifetimePurchases = capillaryApi.getCustomerLifetimePurchases(customerData);
     const tier = capillaryApi.getCustomerTier(customerData);
-    const { percentage, nextTarget } = capillaryApi.calculateProgress(points, tier);
+    const { percentage, nextTarget } = capillaryApi.calculateTierProgress(lifetimePurchases, tier);
     const rewardAmount = capillaryApi.calculateRewardAmount(points);
     const userName = capillaryApi.getCustomerFullName(customerData);
+    const pointsExpiry = calculatePointsExpiry();
 
     return {
       points,
-      pointsExpiry: '03/2025', // This could be calculated from API if available
+      lifetimePurchases,
+      pointsExpiry: pointsExpiry?.expiryDate || null,
+      pointsExpiryAmount: pointsExpiry?.pointsAmount || null,
       rewardAmount,
       nextRewardTarget: nextTarget,
       progressPercentage: percentage,
@@ -125,6 +184,30 @@ export default function HomeScreen() {
   };
 
   const membershipData = getMembershipData();
+
+  // Show error state when no customer data and not loading
+  if (!loading && !membershipData) {
+    return (
+      <LinearGradient 
+        colors={['#F1C229', '#F1C229', '#F5F5F5']} 
+        locations={[0, 0.35, 0.35]}
+        style={styles.container}
+      >
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorTitle}>Account not available</Text>
+            <Text style={styles.errorSubtitle}>Unable to load your account information</Text>
+            <TouchableOpacity 
+              style={styles.retryButton}
+              onPress={fetchCustomerData}
+            >
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+    );
+  }
 
   // Get card image based on tier
   const getCardImage = (tier: string) => {
@@ -189,36 +272,8 @@ export default function HomeScreen() {
       }
     }
     
-    // Fallback to static activities if no API data
-    return [
-      {
-        id: '1',
-        type: 'earned' as const,
-        venue: 'At Sports corner City Center',
-        points: '21.52',
-        pointsAdded: '1520 pts',
-        date: 'TODAY',
-        transactionNumber: 'DEMO001',
-      },
-      {
-        id: '2',
-        type: 'earned' as const,
-        venue: 'At Sports corner City Center',
-        points: '52.00',
-        pointsAdded: '5265 pts',
-        date: '28/06/2025',
-        transactionNumber: 'DEMO002',
-      },
-      {
-        id: '3',
-        type: 'spent' as const,
-        venue: 'At Sports corner City Center',
-        points: '30.50',
-        pointsDeducted: '3060 pts',
-        date: '28/06/2025',
-        transactionNumber: 'DEMO003',
-      },
-    ];
+    // Return empty array if no API data - don't show demo data
+    return [];
   };
 
   const activities = getActivities();
@@ -357,7 +412,9 @@ export default function HomeScreen() {
                         <Text style={styles.pointsValue}>{membershipData.points.toLocaleString()}</Text>
                         <Text style={styles.pointsLabel}>pts</Text>
                       </View>
-                      <Text style={styles.expiryText}>500pts expiring on {membershipData.pointsExpiry}</Text>
+                      {membershipData.pointsExpiryAmount && membershipData.pointsExpiry && (
+                        <Text style={styles.expiryText}>{membershipData.pointsExpiryAmount}pts expiring on {membershipData.pointsExpiry}</Text>
+                      )}
                       
                       <View style={styles.rewardInfo}>
                         <Text style={styles.rewardAmount}>{membershipData.rewardAmount}</Text>
@@ -371,11 +428,19 @@ export default function HomeScreen() {
                 {/* Next Reward in bottom right */}
                 <View style={styles.nextRewardContainer}>
                   <Text style={styles.nextRewardLabel}>{
-                    membershipData.tier === 'Go' ? 'Unlock ActiveFit' :
-                    membershipData.tier === 'Fit' ? 'Unlock ActivePro' :
+                    membershipData.tier === 'ActiveGo' || membershipData.tier === 'Go' ? 'Unlock ActiveFit' :
+                    membershipData.tier === 'ActiveFit' || membershipData.tier === 'Fit' ? 'Unlock ActivePro' :
                     'ActivePro Member'
                   }</Text>
-                  <Text style={styles.nextRewardValue}>{membershipData.points.toLocaleString()}/{membershipData.nextRewardTarget.toLocaleString()}</Text>
+                  {membershipData.nextRewardTarget ? (
+                    <Text style={styles.nextRewardValue}>
+                      {membershipData.lifetimePurchases.toLocaleString()}/{membershipData.nextRewardTarget.toLocaleString()}
+                    </Text>
+                  ) : (
+                    <Text style={styles.nextRewardValue}>
+                      {membershipData.lifetimePurchases.toLocaleString()}
+                    </Text>
+                  )}
                 </View>
               </View>
               </View>
@@ -423,12 +488,10 @@ export default function HomeScreen() {
             {transactions.length > 0 && !error && (
               <Text style={styles.apiIndicator}>Live data</Text>
             )}
-            {(error || transactions.length === 0) && (
-              <Text style={styles.fallbackIndicator}>Demo data</Text>
-            )}
           </View>
           
-          {activities.map((activity) => (
+          {activities.length > 0 ? (
+            activities.map((activity) => (
             <View key={activity.id}>
               <Text style={styles.dateLabel}>{activity.date}</Text>
               <TouchableOpacity style={styles.activityCard}>
@@ -462,7 +525,13 @@ export default function HomeScreen() {
                 </View>
               </TouchableOpacity>
             </View>
-          ))}
+          ))
+          ) : (
+            <View style={styles.noActivitiesContainer}>
+              <Text style={styles.noActivitiesText}>No activities yet</Text>
+              <Text style={styles.noActivitiesSubtext}>Your transaction history will appear here</Text>
+            </View>
+          )}
           
           {/* Load More Link */}
           {activities.length > 0 && (
@@ -842,6 +911,25 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  errorSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
   errorText: {
     fontSize: 12,
     color: '#FF6B6B',
@@ -932,5 +1020,21 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  noActivitiesContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noActivitiesText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  noActivitiesSubtext: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
   },
 });

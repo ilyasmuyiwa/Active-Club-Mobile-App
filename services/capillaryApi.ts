@@ -1,6 +1,7 @@
 // Capillary API Service
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
+import { Platform } from 'react-native';
 import { authService } from './authService';
 
 const CAPILLARY_API_URL = Constants.expoConfig?.extra?.CAPILLARY_API_URL || 'https://eu.api.capillarytech.com/v1.1';
@@ -300,6 +301,7 @@ class CapillaryApiService {
       const url = `${this.baseURL}/customer/get?mobile=${cleanedMobile}`;
       console.log('🔵 Making API call to:', url);
       console.log('🔵 With mobile number:', cleanedMobile);
+      console.log('🔵 Platform:', Platform.OS);
       
       const authToken = await this.getAuthToken();
       if (!authToken) {
@@ -314,56 +316,94 @@ class CapillaryApiService {
       }
       
       console.log('🔵 Authorization token: Present');
+      console.log('🔵 Starting fetch request...');
       
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Basic ${authToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      console.log('🟡 Response status:', response.status);
-      console.log('🟡 Response ok:', response.ok);
-
-      if (!response.ok) {
-        console.error('🔴 API request failed:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('🔴 Error response body:', errorText);
+      // Add timeout for Android to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log('⏱️ Request timeout - aborting fetch');
+        controller.abort();
+      }, 30000); // 30 second timeout
+      
+      let response: Response;
+      let data: CustomerResponse;
+      
+      try {
+        response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Basic ${authToken}`,
+            'Content-Type': 'application/json',
+            ...(Platform.OS === 'android' ? {
+              'Connection': 'close',
+              'Cache-Control': 'no-cache',
+            } : {})
+          },
+          signal: controller.signal
+        });
         
-        // Handle 401 authentication errors
-        if (response.status === 401) {
-          console.log('🔐 401 Authentication error');
-          if (!skipRedirectOnError) {
-            console.log('🔐 Clearing session and redirecting to login');
-            await authService.clearSession();
-            this.handleSessionExpiry();
-          } else {
-            console.log('🔐 Skipping redirect - this is expected for new user verification');
+        clearTimeout(timeoutId);
+        console.log('🟡 Response received!');
+        console.log('🟡 Response status:', response.status);
+        console.log('🟡 Response ok:', response.ok);
+
+        if (!response.ok) {
+          console.error('🔴 API request failed:', response.status, response.statusText);
+          const errorText = await response.text();
+          console.error('🔴 Error response body:', errorText);
+          
+          // Handle 401 authentication errors
+          if (response.status === 401) {
+            console.log('🔐 401 Authentication error');
+            if (!skipRedirectOnError) {
+              console.log('🔐 Clearing session and redirecting to login');
+              await authService.clearSession();
+              this.handleSessionExpiry();
+            } else {
+              console.log('🔐 Skipping redirect - this is expected for new user verification');
+            }
+            
+            return {
+              customer: null,
+              error: {
+                type: 'auth_error',
+                message: 'Authentication failed',
+                code: 401
+              }
+            };
           }
           
           return {
             customer: null,
             error: {
-              type: 'auth_error',
-              message: 'Authentication failed',
-              code: 401
+              type: 'api_error',
+              message: `API request failed: ${response.status} ${response.statusText}`,
+              code: response.status
             }
           };
         }
         
-        return {
-          customer: null,
-          error: {
-            type: 'api_error',
-            message: `API request failed: ${response.status} ${response.statusText}`,
-            code: response.status
-          }
-        };
+        data = await response.json();
+        console.log('🟢 API Response received:', JSON.stringify(data, null, 2));
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        
+        // Handle AbortError (timeout)
+        if (fetchError?.name === 'AbortError') {
+          console.error('🔴 Request timed out after 30 seconds');
+          return {
+            customer: null,
+            error: {
+              type: 'api_error',
+              message: 'Request timed out. Please check your connection and try again.',
+              code: 'TIMEOUT'
+            }
+          };
+        }
+        
+        // Re-throw other fetch errors
+        throw fetchError;
       }
-
-      const data: CustomerResponse = await response.json();
-      console.log('🟢 API Response received:', JSON.stringify(data, null, 2));
       
       // Check if the response is successful with customer data
       if (data.response?.status?.code === 200 && data.response?.customers?.customer && data.response.customers.customer.length > 0) {
@@ -470,6 +510,13 @@ class CapillaryApiService {
   }
 
   /**
+   * Get customer lifetime purchases
+   */
+  getCustomerLifetimePurchases(customer: CustomerData): number {
+    return customer.lifetime_purchases || 0;
+  }
+
+  /**
    * Get customer full name
    */
   getCustomerFullName(customer: CustomerData): string {
@@ -499,7 +546,44 @@ class CapillaryApiService {
   }
 
   /**
-   * Calculate points progress based on tier
+   * Calculate tier progress based on lifetime_purchases (not points)
+   */
+  calculateTierProgress(lifetimePurchases: number, tier: string): { percentage: number; nextTarget: number | null } {
+    console.log('🔵 calculateTierProgress: Input - lifetimePurchases:', lifetimePurchases, 'tier:', tier);
+    
+    const purchaseTargets = {
+      'ActiveGo': 10000,     // 0-9,999 = Go, need 10,000 for Fit
+      'ActiveFit': 30000,    // 10,000-29,999 = Fit, need 30,000 for Pro
+      'ActivePro': null,     // 30,000+ = Pro, no next target
+    };
+
+    let nextTarget: number | null = null;
+    let percentage = 0;
+    
+    // Determine progress based on actual purchase amount, not just tier name
+    if (lifetimePurchases >= 30000) {
+      // 30,000+ = Pro level
+      nextTarget = null;
+      percentage = 100;
+      console.log('🔵 calculateTierProgress: Pro level (30K+) - percentage:', percentage);
+    } else if (lifetimePurchases >= 10000) {
+      // 10,000-29,999 = Fit level, progressing to Pro
+      nextTarget = purchaseTargets.ActiveFit; // 30,000
+      percentage = Math.min((lifetimePurchases / nextTarget) * 100, 100);
+      console.log('🔵 calculateTierProgress: Fit level (10K-30K) - percentage:', percentage, 'nextTarget:', nextTarget);
+    } else {
+      // 0-9,999 = Go level, progressing to Fit
+      nextTarget = purchaseTargets.ActiveGo; // 10,000
+      percentage = Math.min((lifetimePurchases / nextTarget) * 100, 100);
+      console.log('🔵 calculateTierProgress: Go level (0-10K) - percentage:', percentage, 'nextTarget:', nextTarget);
+    }
+    
+    console.log('🔵 calculateTierProgress: Final result - percentage:', percentage, 'nextTarget:', nextTarget);
+    return { percentage, nextTarget };
+  }
+
+  /**
+   * Calculate points progress based on tier (legacy function, kept for compatibility)
    */
   calculateProgress(points: number, tier: string): { percentage: number; nextTarget: number } {
     const tierTargets = {
@@ -529,6 +613,237 @@ class CapillaryApiService {
   calculateRewardAmount(points: number): number {
     // Minimum 300 points = 10 QR, so 1 point = 0.033 QR approximately
     return Math.floor((points / 300) * 10);
+  }
+
+  /**
+   * Update customer profile details
+   */
+  async updateCustomerProfile(
+    mobile: string,
+    updates: {
+      firstname?: string;
+      lastname?: string;
+      nationality?: string;
+      dob?: string; // Format: YYYY-MM-DD
+    }
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const cleanedMobile = this.cleanMobileNumber(mobile);
+      const url = `${this.baseURL}/customer/update`;
+      
+      console.log('🔵 Making customer update API call to:', url);
+      console.log('🔵 With mobile:', cleanedMobile);
+      console.log('🔵 Update data:', updates);
+      
+      const authToken = await this.getAuthToken();
+      if (!authToken) {
+        console.error('🔴 No auth token available');
+        return {
+          success: false,
+          message: 'Authentication required. Please login again.'
+        };
+      }
+
+      // Prepare the request body with root.customer[] structure
+      const requestBody = {
+        root: {
+          customer: [
+            {
+              mobile: cleanedMobile,
+              ...updates
+            }
+          ]
+        }
+      };
+
+      console.log('🔵 Request body:', JSON.stringify(requestBody, null, 2));
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log('⏱️ Customer update request timeout - aborting fetch');
+        controller.abort();
+      }, 30000); // 30 second timeout
+      
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${authToken}`,
+            'Content-Type': 'application/json',
+            ...(Platform.OS === 'android' ? {
+              'Connection': 'close',
+              'Cache-Control': 'no-cache',
+            } : {})
+          },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        console.log('🟡 Customer update response status:', response.status);
+
+        if (!response.ok) {
+          console.error('🔴 Customer update API request failed:', response.status, response.statusText);
+          const errorText = await response.text();
+          console.error('🔴 Error response body:', errorText);
+          
+          return {
+            success: false,
+            message: `Update failed: ${response.status} ${response.statusText}`
+          };
+        }
+
+        const data = await response.json();
+        console.log('🟢 Customer update API Response:', JSON.stringify(data, null, 2));
+        
+        // Check if the response indicates success
+        if (data.response?.status?.code === 200 || data.response?.status?.success === 'true') {
+          console.log('✅ Customer profile updated successfully');
+          return {
+            success: true,
+            message: 'Profile updated successfully'
+          };
+        } else {
+          console.error('🔴 Customer update API error:', data.response?.status);
+          return {
+            success: false,
+            message: data.response?.status?.message || 'Update failed'
+          };
+        }
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        
+        if (fetchError?.name === 'AbortError') {
+          console.error('🔴 Customer update request timed out');
+          return {
+            success: false,
+            message: 'Request timed out. Please check your connection and try again.'
+          };
+        }
+        
+        throw fetchError;
+      }
+    } catch (error) {
+      console.error('🔴 Error updating customer profile:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Update failed due to an unexpected error'
+      };
+    }
+  }
+
+  /**
+   * Register a new customer
+   */
+  async registerCustomer(customerData: {
+    firstname: string;
+    lastname: string;
+    mobile: string;
+    nationality: string;
+    dob: string; // Format: YYYY-MM-DD
+  }): Promise<{ success: boolean; message: string }> {
+    try {
+      const cleanedMobile = this.cleanMobileNumber(customerData.mobile);
+      const url = `${this.baseURL}/customer/add`;
+      
+      console.log('🔵 Making customer registration API call to:', url);
+      console.log('🔵 Registration data:', { ...customerData, mobile: cleanedMobile });
+      
+      const authToken = await this.getAuthToken();
+      if (!authToken) {
+        console.error('🔴 No auth token available');
+        return {
+          success: false,
+          message: 'Authentication required. Please login again.'
+        };
+      }
+
+      // Prepare the request body with root.customer[] structure
+      const requestBody = {
+        root: {
+          customer: [
+            {
+              ...customerData,
+              mobile: cleanedMobile
+            }
+          ]
+        }
+      };
+
+      console.log('🔵 Request body:', JSON.stringify(requestBody, null, 2));
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log('⏱️ Customer registration request timeout - aborting fetch');
+        controller.abort();
+      }, 30000); // 30 second timeout
+      
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${authToken}`,
+            'Content-Type': 'application/json',
+            ...(Platform.OS === 'android' ? {
+              'Connection': 'close',
+              'Cache-Control': 'no-cache',
+            } : {})
+          },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        console.log('🟡 Customer registration response status:', response.status);
+
+        if (!response.ok) {
+          console.error('🔴 Customer registration API request failed:', response.status, response.statusText);
+          const errorText = await response.text();
+          console.error('🔴 Error response body:', errorText);
+          
+          return {
+            success: false,
+            message: `Registration failed: ${response.status} ${response.statusText}`
+          };
+        }
+
+        const data = await response.json();
+        console.log('🟢 Customer registration API Response:', JSON.stringify(data, null, 2));
+        
+        // Check if the response indicates success
+        if (data.response?.status?.code === 200 || data.response?.status?.success === 'true') {
+          console.log('✅ Customer registered successfully');
+          return {
+            success: true,
+            message: 'Registration completed successfully'
+          };
+        } else {
+          console.error('🔴 Customer registration API error:', data.response?.status);
+          return {
+            success: false,
+            message: data.response?.status?.message || 'Registration failed'
+          };
+        }
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        
+        if (fetchError?.name === 'AbortError') {
+          console.error('🔴 Customer registration request timed out');
+          return {
+            success: false,
+            message: 'Request timed out. Please check your connection and try again.'
+          };
+        }
+        
+        throw fetchError;
+      }
+    } catch (error) {
+      console.error('🔴 Error registering customer:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Registration failed due to an unexpected error'
+      };
+    }
   }
 
   /**

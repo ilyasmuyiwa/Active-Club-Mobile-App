@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import Svg, { Defs, Path, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 import { useUser } from '../../contexts/UserContext';
-import { capillaryApi, CustomerData } from '../../services/capillaryApi';
+import { capillaryApi, CustomerData, Transaction } from '../../services/capillaryApi';
 
 interface LevelTier {
   id: string;
@@ -32,18 +32,19 @@ export default function UserLevelScreen() {
   const { phoneNumber } = useUser();
   
   const [customerData, setCustomerData] = useState<CustomerData | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   // Use phone number from context, fallback to demo number
   const userMobile = phoneNumber || '98988787';
   
-  // Tier definitions with thresholds
+  // Tier definitions with purchase thresholds
   const getTierDefinitions = (): LevelTier[] => [
     {
       id: '1',
       name: 'ActiveGo',
-      points: '0 pts',
+      points: '0-9,999 QR',
       pointsThreshold: 0,
       isActive: false,
       isCompleted: false,
@@ -51,29 +52,22 @@ export default function UserLevelScreen() {
     {
       id: '2',
       name: 'ActiveFit',
-      points: '15,000 pts',
-      pointsThreshold: 15000,
+      points: '10,000 QR',
+      pointsThreshold: 10000,
       isActive: false,
       isCompleted: false,
     },
     {
       id: '3',
       name: 'ActivePro',
-      points: '25,000 pts',
-      pointsThreshold: 25000,
+      points: '30,000 QR',
+      pointsThreshold: 30000,
       isActive: false,
       isCompleted: false,
     },
   ];
   
-  // Fallback data for when API fails or no customer data
-  const fallbackData = {
-    currentPoints: 22426,
-    currentReward: 736,
-    currentLevel: 'ActiveFit',
-    expiryDate: '03/2025',
-    progressPercentage: (22426 / 25000) * 100,
-  };
+  // No fallback data - return null when API data is not available
   
   useEffect(() => {
     if (userMobile) {
@@ -86,51 +80,128 @@ export default function UserLevelScreen() {
       setLoading(true);
       setError(null);
       
+      // First, fetch customer data
       console.log('🔵 UserLevelScreen: Fetching customer data for:', userMobile);
-      const result = await capillaryApi.getCustomerByMobile(userMobile);
-      console.log('🔵 UserLevelScreen: API result:', result);
+      const customerResult = await capillaryApi.getCustomerByMobile(userMobile);
+      console.log('🔵 UserLevelScreen: API result:', customerResult);
       
-      if (result.customer) {
-        console.log('✅ UserLevelScreen: Customer found:', result.customer);
-        console.log('🔵 UserLevelScreen: Points:', result.customer.loyalty_points);
-        console.log('🔵 UserLevelScreen: Tier:', result.customer.current_slab);
-        setCustomerData(result.customer);
+      if (customerResult.customer) {
+        console.log('✅ UserLevelScreen: Customer found:', customerResult.customer);
+        console.log('🔵 UserLevelScreen: Points:', customerResult.customer.loyalty_points);
+        console.log('🔵 UserLevelScreen: Tier:', customerResult.customer.current_slab);
+        setCustomerData(customerResult.customer);
+        
+        // Only fetch transactions after successful customer details response
+        console.log('🔵 UserLevelScreen: Fetching transactions after successful customer response...');
+        try {
+          const transactionResult = await capillaryApi.getCustomerTransactionsPaginated(userMobile, 5, 0);
+          
+          if (transactionResult.transactions && transactionResult.transactions.length > 0) {
+            console.log('✅ UserLevelScreen: Transactions received successfully');
+            setTransactions(transactionResult.transactions);
+          } else {
+            console.log('⚠️ UserLevelScreen: No transactions found');
+            setTransactions([]);
+          }
+        } catch (transactionError) {
+          console.error('🔴 UserLevelScreen: Error fetching transactions after successful customer fetch:', transactionError);
+          setTransactions([]);
+          // Don't set error for customer data since that was successful
+        }
       } else {
         console.log('❌ UserLevelScreen: Customer not found or error');
-        if (result.error?.type === 'not_found') {
+        if (customerResult.error?.type === 'not_found') {
           setError('Customer not found');
         } else {
           setError('Failed to load data');
         }
+        setTransactions([]); // Clear transactions if customer not found
       }
     } catch (err) {
       console.error('Error fetching customer data:', err);
       setError('Failed to load data');
+      setTransactions([]); // Clear transactions if customer fetch failed
     } finally {
       setLoading(false);
     }
   };
   
-  // Calculate membership data from API or use fallback
+  // Calculate points expiry from transaction data
+  const calculatePointsExpiry = () => {
+    if (!transactions || transactions.length === 0) {
+      return null; // No expiry info when no transactions
+    }
+
+    // Calculate expiry for each transaction (billing_time + 12 months)
+    const transactionsWithExpiry = transactions.map(transaction => {
+      const billingDate = new Date(transaction.billing_time);
+      const expiryDate = new Date(billingDate);
+      expiryDate.setFullYear(billingDate.getFullYear() + 1); // Add 12 months
+      
+      const pointsEarned = parseFloat(transaction.points.issued) || 0;
+      
+      return {
+        transaction,
+        expiryDate,
+        pointsEarned,
+        billingDate
+      };
+    });
+
+    // Filter to only transactions with earned points
+    const earningTransactions = transactionsWithExpiry.filter(t => t.pointsEarned > 0);
+    
+    if (earningTransactions.length === 0) {
+      return null; // No expiry info when no earning transactions
+    }
+
+    // Sort by expiry date (earliest first)
+    earningTransactions.sort((a, b) => a.expiryDate.getTime() - b.expiryDate.getTime());
+    
+    // Get the transaction closest to expiry
+    const closestToExpiry = earningTransactions[0];
+    
+    // Format expiry date as MM/YYYY
+    const formattedExpiry = `${String(closestToExpiry.expiryDate.getMonth() + 1).padStart(2, '0')}/${closestToExpiry.expiryDate.getFullYear()}`;
+    
+    console.log('🔵 UserLevelScreen Points expiry calculation:', {
+      totalTransactions: transactions.length,
+      earningTransactions: earningTransactions.length,
+      closestExpiry: formattedExpiry,
+      pointsAmount: Math.round(closestToExpiry.pointsEarned),
+      billingDate: closestToExpiry.billingDate.toDateString()
+    });
+    
+    return {
+      pointsAmount: Math.round(closestToExpiry.pointsEarned),
+      expiryDate: formattedExpiry
+    };
+  };
+  
+  // Calculate membership data from API only - no fallback
   const getMembershipData = () => {
     if (!customerData) {
-      console.log('⚠️ UserLevelScreen: No customer data, using fallback');
-      return fallbackData;
+      console.log('⚠️ UserLevelScreen: No customer data available');
+      return null;
     }
 
     console.log('🔵 UserLevelScreen: Using API data for customer:', customerData);
     const points = capillaryApi.getCustomerPoints(customerData);
+    const lifetimePurchases = capillaryApi.getCustomerLifetimePurchases(customerData);
     const tier = capillaryApi.getCustomerTier(customerData);
-    const { percentage, nextTarget } = capillaryApi.calculateProgress(points, tier);
+    const { percentage, nextTarget } = capillaryApi.calculateTierProgress(lifetimePurchases, tier);
     const rewardAmount = capillaryApi.calculateRewardAmount(points);
+    const pointsExpiry = calculatePointsExpiry();
 
-    console.log('🔵 UserLevelScreen: Calculated data:', { points, tier, percentage, rewardAmount });
+    console.log('🔵 UserLevelScreen: Calculated data:', { points, lifetimePurchases, tier, percentage, rewardAmount });
 
     return {
       currentPoints: points,
+      lifetimePurchases,
       currentReward: rewardAmount,
       currentLevel: tier,
-      expiryDate: '03/2025', // This could be calculated from API if available
+      expiryDate: pointsExpiry?.expiryDate || null,
+      expiryAmount: pointsExpiry?.pointsAmount || null,
       progressPercentage: percentage,
       nextTarget,
     };
@@ -138,18 +209,50 @@ export default function UserLevelScreen() {
   
   const membershipData = getMembershipData();
   
-  // Calculate tier status based on current points and level
+  // Show error state when no customer data and not loading
+  if (!loading && !membershipData) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: '#F5F5F5' }]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <IconSymbol name="arrow.left" size={28} color="#000" />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: '#000' }]}>User Level</Text>
+        </View>
+        
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorTitle}>Account not available</Text>
+          <Text style={styles.errorSubtitle}>Unable to load your account information</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={fetchCustomerData}
+          >
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+  
+  // Calculate tier status based on lifetime purchases and level
   const getTierStatus = () => {
+    if (!membershipData) return [];
+    
     const tiers = getTierDefinitions();
-    const currentPoints = membershipData.currentPoints;
+    const lifetimePurchases = membershipData.lifetimePurchases;
     const currentTier = membershipData.currentLevel;
     
-    return tiers.map(tier => {
+    return tiers.map((tier, index) => {
       // Handle tier comparison with or without "Active" prefix
       const normalizedCurrentTier = currentTier.replace('Active', '');
       const normalizedTierName = tier.name.replace('Active', '');
       const isCurrentTier = normalizedTierName === normalizedCurrentTier;
-      const isCompleted = currentPoints >= tier.pointsThreshold && !isCurrentTier;
+      
+      // A tier is completed if:
+      // 1. User has enough lifetime purchases, OR
+      // 2. User is in a higher tier (all lower tiers are completed)
+      const currentTierIndex = tiers.findIndex(t => t.name.replace('Active', '') === normalizedCurrentTier);
+      const isCompleted = (lifetimePurchases >= tier.pointsThreshold) || (currentTierIndex > index);
       
       return {
         ...tier,
@@ -160,6 +263,61 @@ export default function UserLevelScreen() {
   };
   
   const levelTiers = getTierStatus();
+  
+  console.log('🔵 UserLevel: Level tiers status:', levelTiers.map(tier => ({ 
+    name: tier.name, 
+    isActive: tier.isActive, 
+    isCompleted: tier.isCompleted,
+    pointsThreshold: tier.pointsThreshold 
+  })));
+
+  // Calculate overall progress width for the progress bar
+  const getOverallProgressWidth = () => {
+    if (!membershipData) return 0;
+    
+    const lifetimePurchases = membershipData.lifetimePurchases;
+    const currentTier = membershipData.currentLevel;
+    const maxWidth = 65; // Maximum width percentage for the progress line
+    
+    console.log('🔵 UserLevel: Lifetime purchases:', lifetimePurchases);
+    console.log('🔵 UserLevel: Current level:', currentTier);
+    
+    let progressWidth = 0;
+    
+    // Base progress calculation on user's actual tier, not just purchases
+    const normalizedTier = currentTier.replace('Active', '');
+    
+    if (normalizedTier === 'Pro') {
+      // If user is Pro tier, show full progress regardless of purchases
+      progressWidth = maxWidth;
+      console.log('🔵 UserLevel: Pro tier (by status) - full progress width:', progressWidth);
+    } else if (normalizedTier === 'Fit') {
+      // If user is Fit tier, show progress between 2nd and 3rd checkmark (10K to 30K)
+      const progressInTier = Math.min((lifetimePurchases - 10000) / (30000 - 10000), 1);
+      progressWidth = (1/3) * maxWidth + (progressInTier * (1/3) * maxWidth);
+      console.log('🔵 UserLevel: Fit tier - progress width:', progressWidth);
+    } else if (normalizedTier === 'Go') {
+      // If user is Go tier, show progress to 1st checkmark (0 to 10K)
+      const progressInTier = Math.min(lifetimePurchases / 10000, 1);
+      progressWidth = progressInTier * (1/3) * maxWidth;
+      console.log('🔵 UserLevel: Go tier - progress width:', progressWidth);
+    } else {
+      // Fallback to purchase-based calculation
+      if (lifetimePurchases >= 30000) {
+        progressWidth = maxWidth;
+      } else if (lifetimePurchases >= 10000) {
+        const progressInTier = (lifetimePurchases - 10000) / (30000 - 10000);
+        progressWidth = (1/3) * maxWidth + (progressInTier * (1/3) * maxWidth);
+      } else {
+        const progressInTier = lifetimePurchases / 10000;
+        progressWidth = progressInTier * (1/3) * maxWidth;
+      }
+      console.log('🔵 UserLevel: Purchase-based calculation - progress width:', progressWidth);
+    }
+    
+    console.log('🔵 UserLevel: Final progress width:', progressWidth + '%');
+    return progressWidth;
+  };
 
   // Progress Arc Component - Same as HomePage
   const ProgressArc = ({ percentage }: { percentage: number }) => {
@@ -324,7 +482,9 @@ export default function UserLevelScreen() {
                 <Text style={styles.pointsValue}>{membershipData.currentPoints.toLocaleString()}</Text>
                 <Text style={styles.pointsLabel}>pts</Text>
               </View>
-              <Text style={styles.expiryText}>500pts expiring on {membershipData.expiryDate}</Text>
+              {membershipData.expiryAmount && membershipData.expiryDate && (
+                <Text style={styles.expiryText}>{membershipData.expiryAmount}pts expiring on {membershipData.expiryDate}</Text>
+              )}
               
               <View style={styles.rewardInfo}>
                 <Text style={styles.rewardValue}>{membershipData.currentReward}</Text>
@@ -348,7 +508,7 @@ export default function UserLevelScreen() {
           <View style={styles.progressSection}>
             <View style={styles.progressLineContainer}>
               <View style={styles.progressLine} />
-              <View style={[styles.progressLineFill, { width: `${Math.min(membershipData.progressPercentage / 100 * 65, 65)}%` }]} />
+              <View style={[styles.progressLineFill, { width: `${getOverallProgressWidth()}%` }]} />
             </View>
             <View style={styles.progressDotsContainer}>
               <View style={styles.checkmarkContainer}>
@@ -360,9 +520,9 @@ export default function UserLevelScreen() {
               </View>
               <View style={styles.checkmarkContainer}>
                 <IconSymbol 
-                  name={levelTiers[1].isCompleted || levelTiers[1].isActive ? "checkmark.circle.fill" : "circle"} 
+                  name={levelTiers[1].isCompleted ? "checkmark.circle.fill" : "circle"} 
                   size={24} 
-                  color={levelTiers[1].isCompleted || levelTiers[1].isActive ? "#F1C229" : "#E0E0E0"} 
+                  color={levelTiers[1].isCompleted ? "#F1C229" : "#E0E0E0"} 
                 />
               </View>
               <View style={styles.emptyDotContainer}>
@@ -639,7 +799,6 @@ const styles = StyleSheet.create({
     height: 4,
     backgroundColor: '#F1C229',
     top: 10,
-    width: '40%',
     borderRadius: 2,
   },
   progressDotsContainer: {
@@ -734,6 +893,38 @@ const styles = StyleSheet.create({
     color: '#FF6B6B',
     fontStyle: 'italic',
     marginTop: 4,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  errorSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#F1C229',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 10,
+    alignSelf: 'center',
+  },
+  retryText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
   levelCardBackground: {
     backgroundColor: '#F5F5F5',

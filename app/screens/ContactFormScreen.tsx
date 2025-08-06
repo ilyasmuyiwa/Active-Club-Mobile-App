@@ -6,7 +6,6 @@ import {
   TextInput,
   TouchableOpacity,
   SafeAreaView,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -15,6 +14,7 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
+import SuccessAlert from '@/components/SuccessAlert';
 
 export default function ContactFormScreen() {
   const colorScheme = useColorScheme();
@@ -22,22 +22,39 @@ export default function ContactFormScreen() {
   
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: '', message: '', type: 'error' as 'success' | 'error' });
 
   const handleSubmit = () => {
     if (!subject.trim() || !message.trim()) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      setAlertMessage({
+        title: 'Error',
+        message: 'Please fill in all required fields',
+        type: 'error'
+      });
+      setShowAlert(true);
       return;
     }
     
-    Alert.alert(
-      'Success', 
-      'Your message has been sent successfully!',
-      [{ text: 'OK', onPress: () => router.back() }]
-    );
+    setAlertMessage({
+      title: 'Success',
+      message: 'Your message has been sent successfully!',
+      type: 'success'
+    });
+    setShowAlert(true);
+    setTimeout(() => {
+      setShowAlert(false);
+      router.back();
+    }, 2000);
   };
 
   const handleAttachments = () => {
-    Alert.alert('Info', 'Attachment feature coming soon!');
+    setAlertMessage({
+      title: 'Info',
+      message: 'Attachment feature coming soon!',
+      type: 'error'
+    });
+    setShowAlert(true);
   };
 
   return (
@@ -124,6 +141,14 @@ export default function ContactFormScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      
+      <SuccessAlert
+        visible={showAlert}
+        onClose={() => setShowAlert(false)}
+        title={alertMessage.title}
+        message={alertMessage.message}
+        type={alertMessage.type}
+      />
     </SafeAreaView>
   );
 }

@@ -19,7 +19,12 @@
       "Bash(bun install:*)",
       "Bash(claude-code:*)",
       "Bash(cp:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(pkill:*)",
+      "WebFetch(domain:docs.capillarytech.com)",
+      "Bash(ls:*)",
+      "Bash(git rm:*)",
+      "Bash(npm run lint:*)"
     ],
     "deny": []
   }

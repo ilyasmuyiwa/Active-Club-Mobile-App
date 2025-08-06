@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'expo-router';
 import { useUser } from '../../contexts/UserContext';
 import {
   Dimensions,
@@ -15,21 +15,27 @@ import {
   Keyboard,
   View,
   Animated,
-  ActivityIndicator,
-  Alert
+  ActivityIndicator
 } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { ActiveClubLogoSvg } from '../../assets/ActiveClubLogo';
 import { authService } from '../../services/authService';
+import SuccessAlert from '@/components/SuccessAlert';
+import { getHeaderPaddingTop } from '../../utils/statusBar';
 
 const { height, width } = Dimensions.get('window');
 
-const LoginScreen: React.FC = () => {
+function LoginScreen() {
+  const router = useRouter();
+  const userContext = useUser();
+  
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isValidNumber, setIsValidNumber] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-  const { setPhoneNumber: setContextPhoneNumber, checkAuthStatus, setAuthFlow } = useUser();
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: '', message: '', type: 'error' as 'success' | 'error' });
+  
+  const { setPhoneNumber: setContextPhoneNumber, checkAuthStatus, setAuthFlow } = userContext || {};
   
   // Animation values
   const logoAnimatedValue = useRef(new Animated.Value(-100)).current;
@@ -38,7 +44,9 @@ const LoginScreen: React.FC = () => {
 
   useEffect(() => {
     // Set auth flow state when component mounts
-    setAuthFlow(true);
+    if (setAuthFlow) {
+      setAuthFlow(true);
+    }
     
     // Animate logo sliding down from top
     Animated.parallel([
@@ -67,7 +75,9 @@ const LoginScreen: React.FC = () => {
     
     return () => {
       // Clear auth flow state when component unmounts
-      setAuthFlow(false);
+      if (setAuthFlow) {
+        setAuthFlow(false);
+      }
     };
   }, [setAuthFlow]);
 
@@ -103,7 +113,12 @@ const LoginScreen: React.FC = () => {
 
   const handleLogin = async () => {
     if (!isValidNumber) {
-      Alert.alert('Invalid Number', 'Please enter a valid Qatar mobile number.');
+      setAlertMessage({
+        title: 'Invalid Number',
+        message: 'Please enter a valid Qatar mobile number.',
+        type: 'error'
+      });
+      setShowAlert(true);
       return;
     }
 
@@ -122,98 +137,115 @@ const LoginScreen: React.FC = () => {
           params: { phoneNumber: phoneNumber }
         });
       } else {
-        Alert.alert('Error', response.message || 'Failed to send OTP. Please try again.');
+        setAlertMessage({
+          title: 'Error',
+          message: response.message || 'Failed to send OTP. Please try again.',
+          type: 'error'
+        });
+        setShowAlert(true);
       }
     } catch (error) {
       console.error('🔴 Login Screen: Error requesting OTP:', error);
-      Alert.alert(
-        'Connection Error', 
-        'Unable to send OTP. Please check your internet connection and try again.'
-      );
+      setAlertMessage({
+        title: 'Connection Error',
+        message: 'Unable to send OTP. Please check your internet connection and try again.',
+        type: 'error'
+      });
+      setShowAlert(true);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
-        <StatusBar barStyle="light-content" />
-        
-        {/* PNG Background */}
-        <Image 
-          source={require('../../assets/login_page_bg.png')}
-          style={styles.backgroundImage}
-          resizeMode="cover"
-        />
+    <>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.container}>
+          <StatusBar barStyle="light-content" />
+          
+          {/* PNG Background */}
+          <Image 
+            source={require('../../assets/login_page_bg.png')}
+            style={styles.backgroundImage}
+            resizeMode="cover"
+          />
 
-        <KeyboardAvoidingView 
-          style={styles.contentContainer}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          {/* Logo at top with animation */}
-          <Animated.View 
-            style={[
-              styles.logoContainer,
-              {
-                opacity: logoOpacity,
-                transform: [{ translateY: logoAnimatedValue }]
-              }
-            ]}
+          <KeyboardAvoidingView 
+            style={styles.contentContainer}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           >
-            <SvgXml xml={ActiveClubLogoSvg} width={140} height={56} />
-          </Animated.View>
-
-          {/* Spacer to push form down */}
-          <View style={styles.spacer} />
-
-          {/* Login Form with slide up animation */}
-          <Animated.View 
-            style={[
-              styles.formContainer,
-              {
-                transform: [{ translateY: formAnimatedValue }]
-              }
-            ]}
-          >
-            <Text style={styles.title}>Login</Text>
-            
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={[
-                  styles.input,
-                  isValidNumber && styles.inputValid
-                ]}
-                value={phoneNumber}
-                onChangeText={handlePhoneNumberChange}
-                placeholder="+974 Mobile number"
-                placeholderTextColor="#999999"
-                keyboardType="phone-pad"
-                returnKeyType="done"
-                onSubmitEditing={handleLogin}
-              />
-              {isValidNumber && (
-                <View style={styles.checkmarkContainer}>
-                  <Text style={styles.checkmark}>✓</Text>
-                </View>
-              )}
-            </View>
-
-            <TouchableOpacity 
-              style={[styles.button, (!isValidNumber || isLoading) && styles.buttonDisabled]}
-              onPress={handleLogin}
-              disabled={!isValidNumber || isLoading}
+            {/* Logo at top with animation */}
+            <Animated.View 
+              style={[
+                styles.logoContainer,
+                {
+                  opacity: logoOpacity,
+                  transform: [{ translateY: logoAnimatedValue }]
+                }
+              ]}
             >
-              {isLoading ? (
-                <ActivityIndicator color="#000000" size="small" />
-              ) : (
-                <Text style={styles.buttonText}>Send OTP</Text>
-              )}
-            </TouchableOpacity>
-          </Animated.View>
-        </KeyboardAvoidingView>
-      </View>
-    </TouchableWithoutFeedback>
+              <SvgXml xml={ActiveClubLogoSvg} width={140} height={56} />
+            </Animated.View>
+
+            {/* Spacer to push form down */}
+            <View style={styles.spacer} />
+
+            {/* Login Form with slide up animation */}
+            <Animated.View 
+              style={[
+                styles.formContainer,
+                {
+                  transform: [{ translateY: formAnimatedValue }]
+                }
+              ]}
+            >
+              <Text style={styles.title}>Login</Text>
+              
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    isValidNumber && styles.inputValid
+                  ]}
+                  value={phoneNumber}
+                  onChangeText={handlePhoneNumberChange}
+                  placeholder="+974 Mobile number"
+                  placeholderTextColor="#999999"
+                  keyboardType="phone-pad"
+                  returnKeyType="done"
+                  onSubmitEditing={handleLogin}
+                />
+                {isValidNumber && (
+                  <View style={styles.checkmarkContainer}>
+                    <Text style={styles.checkmark}>✓</Text>
+                  </View>
+                )}
+              </View>
+
+              <TouchableOpacity 
+                style={[styles.button, (!isValidNumber || isLoading) && styles.buttonDisabled]}
+                onPress={handleLogin}
+                disabled={!isValidNumber || isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#000000" size="small" />
+                ) : (
+                  <Text style={styles.buttonText}>Send OTP</Text>
+                )}
+              </TouchableOpacity>
+            </Animated.View>
+          </KeyboardAvoidingView>
+        </View>
+      </TouchableWithoutFeedback>
+      
+      <SuccessAlert
+        visible={showAlert}
+        onClose={() => setShowAlert(false)}
+        title={alertMessage.title}
+        message={alertMessage.message}
+        type={alertMessage.type}
+      />
+    </>
   );
 };
 
@@ -231,7 +263,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    paddingTop: 80,
+    paddingTop: getHeaderPaddingTop(45),
   },
   logoContainer: {
     alignItems: 'center',

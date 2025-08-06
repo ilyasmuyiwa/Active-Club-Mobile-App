@@ -55,10 +55,16 @@ const OtpScreen: React.FC = () => {
 
     return () => {
       clearInterval(interval);
+    };
+  }, []);
+  
+  // Separate effect for cleanup to avoid dependency issues
+  useEffect(() => {
+    return () => {
       // Clear auth flow state when component unmounts
       setAuthFlow(false);
     };
-  }, []); // Remove setAuthFlow from dependency array
+  }, [setAuthFlow]);
 
   const handleOtpChange = (value: string, index: number) => {
     // Handle iOS auto-fill - if user pastes/auto-fills multiple digits
@@ -178,10 +184,13 @@ const OtpScreen: React.FC = () => {
             });
             setShowSuccessAlert(true);
             
-            // Navigate to home screen
+            // Navigate to home screen and clear auth flow
             setTimeout(() => {
               setShowSuccessAlert(false);
-              router.replace('/(tabs)');
+              setAuthFlow(false); // Clear auth flow before navigation
+              setTimeout(() => {
+                router.replace('/(tabs)');
+              }, 100);
             }, 2000);
           } else if (customerResult.error?.type === 'not_found') {
             console.log('⚠️ OTP Screen: Customer not found in Capillary (code 1012), redirecting to registration');
@@ -192,13 +201,16 @@ const OtpScreen: React.FC = () => {
             });
             setShowSuccessAlert(true);
             
-            // Navigate to registration screen
+            // Navigate to registration screen and clear auth flow
             setTimeout(() => {
               setShowSuccessAlert(false);
-              router.replace({
-                pathname: '/screens/RegistrationScreen',
-                params: { phoneNumber: phoneNumber }
-              });
+              setAuthFlow(false); // Clear auth flow before navigation
+              setTimeout(() => {
+                router.replace({
+                  pathname: '/screens/RegistrationScreen',
+                  params: { phoneNumber: phoneNumber }
+                });
+              }, 100);
             }, 2000);
           } else {
             // API error - show error popup, don't redirect to registration

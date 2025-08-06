@@ -4,7 +4,6 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -14,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useUser } from '../../contexts/UserContext';
+import SuccessAlert from '@/components/SuccessAlert';
 
 export default function SettingsScreen() {
   const colorScheme = useColorScheme();
@@ -23,32 +23,34 @@ export default function SettingsScreen() {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [smsNotifications, setSmsNotifications] = useState(true);
   const [language] = useState('English');
+  const [showAlert, setShowAlert] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: '', message: '', type: 'error' as 'success' | 'error' });
 
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await logout();
-              // Navigate to login screen
-              router.replace('/screens/LoginScreen');
-            } catch (error) {
-              console.error('Error during logout:', error);
-              Alert.alert('Error', 'Failed to logout. Please try again.');
-            }
-          },
-        },
-      ],
-    );
+    setAlertMessage({
+      title: 'Logout',
+      message: 'Are you sure you want to logout?',
+      type: 'error'
+    });
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = async () => {
+    setShowLogoutConfirm(false);
+    try {
+      await logout();
+      // Navigate to login screen
+      router.replace('/screens/LoginScreen');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      setAlertMessage({
+        title: 'Error',
+        message: 'Failed to logout. Please try again.',
+        type: 'error'
+      });
+      setShowAlert(true);
+    }
   };
 
   const SettingsSection = ({ title, icon }: { title: string; icon: string }) => (
@@ -192,6 +194,38 @@ export default function SettingsScreen() {
           )}
         </View>
       </ScrollView>
+      
+      <SuccessAlert
+        visible={showAlert}
+        onClose={() => setShowAlert(false)}
+        title={alertMessage.title}
+        message={alertMessage.message}
+        type={alertMessage.type}
+      />
+      
+      {/* Custom Logout Confirmation */}
+      {showLogoutConfirm && (
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmModal}>
+            <Text style={styles.confirmTitle}>Logout</Text>
+            <Text style={styles.confirmMessage}>Are you sure you want to logout?</Text>
+            <View style={styles.confirmButtons}>
+              <TouchableOpacity 
+                style={[styles.confirmButton, styles.cancelButton]}
+                onPress={() => setShowLogoutConfirm(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.confirmButton, styles.logoutConfirmButton]}
+                onPress={confirmLogout}
+              >
+                <Text style={styles.logoutConfirmButtonText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -275,5 +309,61 @@ const styles = StyleSheet.create({
   loginText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  confirmOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  confirmModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    marginHorizontal: 40,
+    alignItems: 'center',
+  },
+  confirmTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000000',
+    marginBottom: 8,
+  },
+  confirmMessage: {
+    fontSize: 16,
+    color: '#666666',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  confirmButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  confirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#F5F5F5',
+  },
+  cancelButtonText: {
+    color: '#000000',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  logoutConfirmButton: {
+    backgroundColor: '#FF6B6B',
+  },
+  logoutConfirmButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });

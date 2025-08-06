@@ -96,6 +96,7 @@ export interface CustomerResult {
 
 class CapillaryApiService {
   private baseURL = CAPILLARY_API_URL;
+  private customerRequestCache = new Map<string, Promise<any>>();
   
   /**
    * Get auth token from session and handle expiry
@@ -296,8 +297,30 @@ class CapillaryApiService {
    * Get customer details by mobile number
    */
   async getCustomerByMobile(mobile: string, skipRedirectOnError: boolean = false): Promise<CustomerResult> {
+    const cleanedMobile = this.cleanMobileNumber(mobile);
+    const cacheKey = `customer_${cleanedMobile}`;
+    
+    // Return cached promise if request is already in progress
+    if (this.customerRequestCache.has(cacheKey)) {
+      console.log('🔄 Using cached customer request for:', cleanedMobile);
+      return await this.customerRequestCache.get(cacheKey)!;
+    }
+    
+    // Create and cache the API call promise
+    const apiCallPromise = this.performCustomerAPICall(cleanedMobile, skipRedirectOnError);
+    this.customerRequestCache.set(cacheKey, apiCallPromise);
+    
     try {
-      const cleanedMobile = this.cleanMobileNumber(mobile);
+      const result = await apiCallPromise;
+      return result;
+    } finally {
+      // Clean up cache after request completes (success or failure)
+      this.customerRequestCache.delete(cacheKey);
+    }
+  }
+
+  private async performCustomerAPICall(cleanedMobile: string, skipRedirectOnError: boolean): Promise<CustomerResult> {
+    try {
       const url = `${this.baseURL}/customer/get?mobile=${cleanedMobile}`;
       console.log('🔵 Making API call to:', url);
       console.log('🔵 With mobile number:', cleanedMobile);
@@ -739,6 +762,7 @@ class CapillaryApiService {
     firstname: string;
     lastname: string;
     mobile: string;
+    email?: string;
     nationality: string;
     dob: string; // Format: YYYY-MM-DD
   }): Promise<{ success: boolean; message: string }> {

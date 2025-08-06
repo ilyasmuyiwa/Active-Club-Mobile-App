@@ -199,6 +199,7 @@ const RegistrationScreen: React.FC = () => {
         firstname: formData.firstName,
         lastname: formData.lastName,
         mobile: formData.mobileNumber,
+        email: formData.email,
         nationality: formData.nationality,
         dob: apiDateOfBirth
       };

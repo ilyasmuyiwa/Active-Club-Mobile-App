@@ -58,6 +58,7 @@ const RegistrationScreen: React.FC = () => {
   });
 
   const updateFormData = (field: keyof FormData, value: string | boolean) => {
+    console.log('🔵 RegistrationScreen: updateFormData called', { field, value });
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -90,8 +91,11 @@ const RegistrationScreen: React.FC = () => {
   const isDateOfBirthValid = validateDateOfBirth(formData.dateOfBirth);
 
   const handleDateChange = (event: any, date?: Date) => {
+    console.log('🔵 RegistrationScreen: handleDateChange called', { event: event.type, date });
+    
     // Handle dismissal properly
     if (event.type === 'dismissed' || event.type === 'neutralButtonPressed') {
+      console.log('🔵 RegistrationScreen: Date picker dismissed');
       setShowDatePicker(false);
       return;
     }
@@ -102,8 +106,10 @@ const RegistrationScreen: React.FC = () => {
     }
     
     if (date) {
+      console.log('🔵 RegistrationScreen: Setting selected date:', date);
       setSelectedDate(date);
       const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+      console.log('🔵 RegistrationScreen: Formatted date:', formattedDate);
       updateFormData('dateOfBirth', formattedDate);
       
       // On iOS, close after selection
@@ -166,11 +172,27 @@ const RegistrationScreen: React.FC = () => {
     try {
       // Convert date format from DD/MM/YYYY to YYYY-MM-DD for API
       let apiDateOfBirth = '';
+      console.log('🔵 RegistrationScreen: Original dateOfBirth:', formData.dateOfBirth);
+      
       if (formData.dateOfBirth) {
         const parts = formData.dateOfBirth.split('/');
+        console.log('🔵 RegistrationScreen: Date parts:', parts);
         if (parts.length === 3) {
-          apiDateOfBirth = `${parts[2]}-${parts[1]}-${parts[0]}`;
+          // Format: YYYY-MM-DD
+          apiDateOfBirth = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+          console.log('🔵 RegistrationScreen: Converted date:', apiDateOfBirth);
         }
+      }
+      
+      // Validate that we have a proper date before sending
+      if (!apiDateOfBirth) {
+        setAlertMessage({
+          title: 'Error',
+          message: 'Please select your date of birth.',
+          type: 'error'
+        });
+        setShowSuccessAlert(true);
+        return;
       }
 
       const customerData = {
@@ -181,7 +203,7 @@ const RegistrationScreen: React.FC = () => {
         dob: apiDateOfBirth
       };
 
-      console.log('🔵 RegistrationScreen: Customer data:', customerData);
+      console.log('🔵 RegistrationScreen: Final customer data:', customerData);
 
       const result = await capillaryApi.registerCustomer(customerData);
       
@@ -497,7 +519,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: getHeaderPaddingTop(25),
+    paddingTop: getHeaderPaddingTop(40),
     paddingBottom: 20,
     backgroundColor: '#FFFFFF',
   },

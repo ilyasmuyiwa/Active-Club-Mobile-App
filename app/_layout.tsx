@@ -22,11 +22,41 @@ export default function RootLayout() {
     <UserProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
-          <Stack.Screen name="screens/SplashScreen" options={{ headerShown: false }} />
-          <Stack.Screen name="screens/LoginScreen" options={{ headerShown: false }} />
-          <Stack.Screen name="screens/OtpScreen" options={{ headerShown: false }} />
-          <Stack.Screen name="screens/RegistrationScreen" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen 
+            name="screens/SplashScreen" 
+            options={{ 
+              headerShown: false,
+              gestureEnabled: false 
+            }} 
+          />
+          <Stack.Screen 
+            name="screens/LoginScreen" 
+            options={{ 
+              headerShown: false,
+              gestureEnabled: false 
+            }} 
+          />
+          <Stack.Screen 
+            name="screens/OtpScreen" 
+            options={{ 
+              headerShown: false,
+              gestureEnabled: false 
+            }} 
+          />
+          <Stack.Screen 
+            name="screens/RegistrationScreen" 
+            options={{ 
+              headerShown: false,
+              gestureEnabled: false 
+            }} 
+          />
+          <Stack.Screen 
+            name="(tabs)" 
+            options={{ 
+              headerShown: false,
+              gestureEnabled: false 
+            }} 
+          />
           <Stack.Screen name="user-level" options={{ headerShown: false }} />
           <Stack.Screen name="settings" options={{ headerShown: false }} />
           <Stack.Screen name="profile" options={{ headerShown: false }} />

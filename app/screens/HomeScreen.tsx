@@ -489,9 +489,6 @@ export default function HomeScreen() {
         <View style={styles.activitiesSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Latest activities</Text>
-            {transactions.length > 0 && !error && (
-              <Text style={styles.apiIndicator}>Live data</Text>
-            )}
           </View>
           
           {activities.length > 0 ? (
@@ -803,24 +800,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-  },
-  apiIndicator: {
-    fontSize: 12,
-    color: '#4CAF50',
-    backgroundColor: '#E8F5E8',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    fontWeight: '500',
-  },
-  fallbackIndicator: {
-    fontSize: 12,
-    color: '#FF9800',
-    backgroundColor: '#FFF3E0',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    fontWeight: '500',
   },
   dateLabel: {
     fontSize: 12,

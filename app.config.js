@@ -1,6 +1,6 @@
 export default {
   expo: {
-    name: 'active-club',
+    name: 'Active Club',
     slug: 'active-club',
     version: '1.0.0',
     orientation: 'portrait',
@@ -9,7 +9,13 @@ export default {
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
-      supportsTablet: true,
+      supportsTablet: false,
+      bundleIdentifier: 'com.activeclub.app', // Change this to your organization's bundle ID
+      buildNumber: '1',
+      infoPlist: {
+        NSCameraUsageDescription: 'This app uses the camera to scan membership barcodes.',
+        ITSAppUsesNonExemptEncryption: false,
+      },
     },
     android: {
       adaptiveIcon: {

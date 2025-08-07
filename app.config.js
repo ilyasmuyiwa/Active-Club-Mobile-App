@@ -10,7 +10,7 @@ export default {
     newArchEnabled: true,
     ios: {
       supportsTablet: false,
-      bundleIdentifier: 'com.activeclub.app', // Change this to your organization's bundle ID
+      bundleIdentifier: 'com.tbg.loyalty',
       buildNumber: '1',
       infoPlist: {
         NSCameraUsageDescription: 'This app uses the camera to scan membership barcodes.',

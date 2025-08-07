@@ -49,6 +49,9 @@ export default {
       OTP_API_KEY: process.env.OTP_API_KEY || '6b1f1e3b0f9d4c9a9f2f7a93d1a4c5e6f88b7c0d5e9a1c2b3d4e5f60718293af',
       OTP_API_URL: process.env.OTP_API_URL || 'https://sportscorner.qa/rest/V1/otp',
       CAPILLARY_API_URL: process.env.CAPILLARY_API_URL || 'https://eu.api.capillarytech.com/v1.1',
+      eas: {
+        projectId: '833c3db2-bec6-4f1e-b653-9765287a1188'
+      }
     },
   },
 };

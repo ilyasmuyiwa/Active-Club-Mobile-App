@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <radialGradient id="bgGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#2A2A2A"/>
+      <stop offset="100%" style="stop-color:#1A1A1A"/>
+    </radialGradient>
+  </defs>
+  
+  <rect width="1024" height="1024" fill="url(#bgGradient)"/>
+  
+  <!-- Large central star -->
+  <path d="M 512 200 L 600 420 L 840 420 L 650 560 L 740 780 L 512 640 L 284 780 L 374 560 L 184 420 L 424 420 Z" 
+        fill="#F1C229"/>
+  
+  <!-- Inner shadow for depth -->
+  <path d="M 512 200 L 600 420 L 840 420 L 650 560 L 740 780 L 512 640 L 284 780 L 374 560 L 184 420 L 424 420 Z" 
+        fill="#000000" 
+        opacity="0.2" 
+        transform="translate(10, 10)"/>
+</svg>

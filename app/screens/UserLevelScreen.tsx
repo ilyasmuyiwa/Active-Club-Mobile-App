@@ -44,7 +44,7 @@ export default function UserLevelScreen() {
     {
       id: '1',
       name: 'ActiveGo',
-      points: '0-9,999 QR',
+      points: '0 - 9,999 QR',
       pointsThreshold: 0,
       isActive: false,
       isCompleted: false,
@@ -52,7 +52,7 @@ export default function UserLevelScreen() {
     {
       id: '2',
       name: 'ActiveFit',
-      points: '10,000 QR',
+      points: '10,000 - 29,999 QR',
       pointsThreshold: 10000,
       isActive: false,
       isCompleted: false,
@@ -60,7 +60,7 @@ export default function UserLevelScreen() {
     {
       id: '3',
       name: 'ActivePro',
-      points: '30,000 QR',
+      points: '30,000+ QR',
       pointsThreshold: 30000,
       isActive: false,
       isCompleted: false,

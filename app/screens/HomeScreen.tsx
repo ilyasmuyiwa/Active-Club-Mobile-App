@@ -30,6 +30,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [qrModalVisible, setQrModalVisible] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
   const { phoneNumber, isAuthenticated, isLoading: userLoading, onCustomerDataRefresh } = useUser();
 
   // No fallback data - return null when API data is not available
@@ -345,7 +346,12 @@ export default function HomeScreen() {
       <SafeAreaView style={{ flex: 1 }}>
         <StatusBar barStyle="dark-content" backgroundColor="#F1C229" />
         
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          onScroll={(event) => {
+            setScrollY(event.nativeEvent.contentOffset.y);
+          }}
+          scrollEventThrottle={16}>
         {/* Header Section */}
         <View style={styles.headerSection}>
           <View style={styles.header}>
@@ -550,6 +556,11 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
       </SafeAreaView>
+
+      {/* Dynamic Overlay to prevent text from showing under header */}
+      {scrollY > 400 && (
+        <View style={styles.dynamicOverlay} />
+      )}
 
       {/* Barcode Modal */}
       <Modal
@@ -1027,5 +1038,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     textAlign: 'center',
+  },
+  dynamicOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+    backgroundColor: '#F5F5F5',
+    zIndex: 1000,
   },
 });

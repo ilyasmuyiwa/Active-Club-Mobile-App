@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-  <g id="Group_6559" data-name="Group 6559" transform="translate(-138.114 -310.114)">
-    <path id="Path_6651" data-name="Path 6651" d="M50,0A50,50,0,1,1,0,50,50,50,0,0,1,50,0Z" transform="translate(138.114 310.114)" fill="#ffc900" opacity="0.1"/>
-    <circle id="Ellipse_44" data-name="Ellipse 44" cx="35" cy="35" r="35" transform="translate(153.114 325.114)" fill="#ffc900"/>
-    <path id="Icon_material-check" data-name="Icon material-check" d="M15.219,27.508,7.682,19.971,5.115,22.52l10.1,10.1,21.69-21.69L34.36,8.385Z" transform="translate(167.102 339.61)" fill="#fff"/>
-  </g>
-</svg>

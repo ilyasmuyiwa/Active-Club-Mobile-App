@@ -24,7 +24,12 @@
       "WebFetch(domain:docs.capillarytech.com)",
       "Bash(ls:*)",
       "Bash(git rm:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(grep:*)",
+      "Bash(mv:*)",
+      "Bash(git mv:*)",
+      "Bash(npm run build:android:*)",
+      "Bash(eas build:list:*)"
     ],
     "deny": []
   }

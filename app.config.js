@@ -2,12 +2,17 @@ export default {
   expo: {
     name: 'Active Club',
     slug: 'active-club',
-    version: '1.0.0',
+    version: '2.0.1',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
     scheme: 'activeclub',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
+    splash: {
+      image: './assets/images/icon.png',
+      resizeMode: 'contain',
+      backgroundColor: '#F1C229'
+    },
     ios: {
       supportsTablet: false,
       bundleIdentifier: 'com.tbg.loyalty',
@@ -18,6 +23,7 @@ export default {
       },
     },
     android: {
+      package: 'com.tbg.loyalty',
       adaptiveIcon: {
         foregroundImage: './assets/images/adaptive-icon.png',
         backgroundColor: '#ffffff',
@@ -34,10 +40,10 @@ export default {
       [
         'expo-splash-screen',
         {
-          image: './assets/images/splash-icon.png',
+          image: './assets/images/icon.png',
           imageWidth: 200,
           resizeMode: 'contain',
-          backgroundColor: '#ffffff',
+          backgroundColor: '#F1C229',
         },
       ],
     ],

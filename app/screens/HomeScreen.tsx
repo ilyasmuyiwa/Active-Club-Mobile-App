@@ -192,24 +192,26 @@ export default function HomeScreen() {
   // Show error state when no customer data and not loading
   if (!loading && !membershipData) {
     return (
-      <LinearGradient 
-        colors={['#F1C229', '#F1C229', '#F5F5F5']} 
-        locations={[0, 0.35, 0.35]}
-        style={styles.container}
-      >
-        <SafeAreaView style={{ flex: 1 }}>
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorTitle}>Account not available</Text>
-            <Text style={styles.errorSubtitle}>Unable to load your account information</Text>
-            <TouchableOpacity 
-              style={styles.retryButton}
-              onPress={fetchCustomerData}
-            >
-              <Text style={styles.retryText}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
+      <View style={styles.container}>
+        <LinearGradient 
+          colors={['#F1C229', '#F1C229', '#F5F5F5']} 
+          locations={[0, 0.35, 0.35]}
+          style={styles.gradientContainer}
+        >
+          <SafeAreaView style={{ flex: 1 }}>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorTitle}>Account not available</Text>
+              <Text style={styles.errorSubtitle}>Unable to load your account information</Text>
+              <TouchableOpacity 
+                style={styles.retryButton}
+                onPress={fetchCustomerData}
+              >
+                <Text style={styles.retryText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          </SafeAreaView>
+        </LinearGradient>
+      </View>
     );
   }
 
@@ -250,18 +252,20 @@ export default function HomeScreen() {
   // Show loading indicator
   if (loading) {
     return (
-      <LinearGradient 
-        colors={['#F1C229', '#F1C229', '#F5F5F5']} 
-        locations={[0, 0.35, 0.35]}
-        style={styles.container}
-      >
-        <SafeAreaView style={{ flex: 1 }}>
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#F1C229" />
-            <Text style={styles.loadingText}>Loading your account...</Text>
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
+      <View style={styles.container}>
+        <LinearGradient 
+          colors={['#F1C229', '#F1C229', '#F5F5F5']} 
+          locations={[0, 0.35, 0.35]}
+          style={styles.gradientContainer}
+        >
+          <SafeAreaView style={{ flex: 1 }}>
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#F1C229" />
+              <Text style={styles.loadingText}>Loading your account...</Text>
+            </View>
+          </SafeAreaView>
+        </LinearGradient>
+      </View>
     );
   }
 
@@ -338,14 +342,15 @@ export default function HomeScreen() {
   };
 
   return (
-    <LinearGradient 
-      colors={['#F1C229', '#F1C229', '#F5F5F5']} 
-      locations={[0, 0.35, 0.35]}
-      style={styles.container}>
-      <SafeAreaView style={{ flex: 1 }}>
-        <StatusBar barStyle="dark-content" backgroundColor="#F1C229" />
-        
-        <ScrollView showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
+      <LinearGradient 
+        colors={['#F1C229', '#F1C229', '#F5F5F5']} 
+        locations={[0, 0.35, 0.35]}
+        style={styles.gradientContainer}>
+        <SafeAreaView style={{ flex: 1 }}>
+          <StatusBar barStyle="dark-content" backgroundColor="#F1C229" />
+          
+          <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header Section */}
         <View style={styles.headerSection}>
           <View style={styles.header}>
@@ -485,8 +490,12 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Latest Activities */}
-        <View style={styles.activitiesSection}>
+          </ScrollView>
+        </SafeAreaView>
+      </LinearGradient>
+
+      {/* Activities Section - Outside gradient container */}
+      <View style={styles.activitiesSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Latest activities</Text>
           </View>
@@ -546,11 +555,9 @@ export default function HomeScreen() {
             </TouchableOpacity>
           )}
         </View>
-      </ScrollView>
-      </SafeAreaView>
 
-      {/* Barcode Modal */}
-      <Modal
+        {/* Barcode Modal */}
+        <Modal
         animationType="fade"
         transparent={true}
         visible={qrModalVisible}
@@ -584,13 +591,17 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  gradientContainer: {
+    flex: 0.7, // Takes up about 70% of the screen
   },
   headerSection: {
     paddingTop: 20,
@@ -788,7 +799,9 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   activitiesSection: {
+    flex: 0.3, // Takes up about 30% of the screen
     padding: 20,
+    backgroundColor: '#FFFFFF',
   },
   sectionHeader: {
     flexDirection: 'row',

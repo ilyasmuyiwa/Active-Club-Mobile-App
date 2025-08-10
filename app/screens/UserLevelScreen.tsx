@@ -12,6 +12,8 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import Svg, { Defs, Path, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 import { useUser } from '../../contexts/UserContext';
@@ -212,7 +214,7 @@ export default function UserLevelScreen() {
   // Show error state when no customer data and not loading
   if (!loading && !membershipData) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: '#F5F5F5' }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: '#F5F5F5', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <IconSymbol name="arrow.left" size={28} color="#000" />
@@ -396,10 +398,10 @@ export default function UserLevelScreen() {
           />
         </View>
         
-        <Text style={[styles.levelName, { color: colors.text }]}>
+        <Text style={[styles.levelName, { color: '#000' }]}>
           {level.name}
         </Text>
-        <Text style={[styles.levelPoints, { color: colors.icon }]}>
+        <Text style={[styles.levelPoints, { color: '#666' }]}>
           {level.points}
         </Text>
       </View>
@@ -409,7 +411,7 @@ export default function UserLevelScreen() {
   // Show loading indicator
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}>
         <View style={[styles.header, { backgroundColor: colors.background }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <IconSymbol name="arrow.left" size={28} color={colors.text} />
@@ -454,10 +456,10 @@ export default function UserLevelScreen() {
               />
             </View>
             <View style={styles.statusInfo}>
-              <Text style={[styles.statusLabel, { color: colors.icon }]}>
+              <Text style={[styles.statusLabel, { color: '#666' }]}>
                 You are an Active Club
               </Text>
-              <Text style={[styles.statusLevel, { color: colors.text }]}>
+              <Text style={[styles.statusLevel, { color: '#000' }]}>
                 {membershipData?.currentLevel?.startsWith('Active') ? membershipData.currentLevel : `Active${membershipData?.currentLevel || 'Go'}`}
               </Text>
               <TouchableOpacity onPress={() => router.push('/(tabs)/activities')}>
@@ -535,14 +537,14 @@ export default function UserLevelScreen() {
             </View>
           </View>
 
-          <Text style={[styles.disclaimerText, { color: colors.icon }]}>
+          <Text style={[styles.disclaimerText, { color: '#666' }]}>
             Redeeming points has no effect on your level advancement
           </Text>
         </View>
 
         {/* How it works */}
         <View style={styles.howItWorksCard}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          <Text style={[styles.sectionTitle, { color: '#000' }]}>
             How it works
           </Text>
           
@@ -550,7 +552,7 @@ export default function UserLevelScreen() {
             <View style={styles.iconContainer}>
               <IconSymbol name="star.fill" size={20} color="#F1C229" />
             </View>
-            <Text style={[styles.workText, { color: colors.text }]}>
+            <Text style={[styles.workText, { color: '#000' }]}>
               Earned points for every order
             </Text>
           </View>
@@ -559,7 +561,7 @@ export default function UserLevelScreen() {
             <View style={styles.iconContainer}>
               <IconSymbol name="gift.fill" size={20} color="#F1C229" />
             </View>
-            <Text style={[styles.workText, { color: colors.text }]}>
+            <Text style={[styles.workText, { color: '#000' }]}>
               Redeem existing points
             </Text>
           </View>
@@ -568,16 +570,16 @@ export default function UserLevelScreen() {
             <View style={styles.iconContainer}>
               <IconSymbol name="crown.fill" size={20} color="#F1C229" />
             </View>
-            <Text style={[styles.workText, { color: colors.text }]}>
+            <Text style={[styles.workText, { color: '#000' }]}>
               Level up & enjoy exclusive benefits
             </Text>
           </View>
           
           <View style={styles.descriptionSection}>
-            <Text style={[styles.descriptionText, { color: colors.text }]}>
+            <Text style={[styles.descriptionText, { color: '#666' }]}>
               You have been added to active points at no cost.
             </Text>
-            <Text style={[styles.descriptionText, { color: colors.text }]}>
+            <Text style={[styles.descriptionText, { color: '#666' }]}>
               You&apos;ll start at bronze level. Use active points more & earn points to reach higher levels
             </Text>
           </View>

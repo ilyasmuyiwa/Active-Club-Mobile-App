@@ -6,6 +6,8 @@ import {
   ScrollView,
   SafeAreaView,
   TouchableOpacity,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -70,10 +72,10 @@ export default function PartnersScreen() {
       </View>
       
       <View style={styles.partnerInfo}>
-        <Text style={[styles.partnerName, { color: colors.text }]}>
+        <Text style={[styles.partnerName, { color: '#000' }]}>
           {partner.name}
         </Text>
-        <Text style={[styles.storeCount, { color: colors.icon }]}>
+        <Text style={[styles.storeCount, { color: '#666' }]}>
           {partner.storeCount}
         </Text>
       </View>
@@ -81,7 +83,7 @@ export default function PartnersScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}>
       <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <IconSymbol name="arrow.left" size={28} color={colors.text} />
@@ -96,10 +98,10 @@ export default function PartnersScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.loyaltySection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          <Text style={[styles.sectionTitle, { color: '#000' }]}>
             Loyalty Partners
           </Text>
-          <Text style={[styles.sectionDescription, { color: colors.icon }]}>
+          <Text style={[styles.sectionDescription, { color: '#666' }]}>
             We&apos;ve teamed up with top sportswear brands to bring you even more ways to enjoy your loyalty benefits. Earn points as you shop with our trusted partners and stay tuned, more exciting names are on the way.
           </Text>
         </View>

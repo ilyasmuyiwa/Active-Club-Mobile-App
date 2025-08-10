@@ -2,7 +2,7 @@ export default {
   expo: {
     name: 'Active Club',
     slug: 'active-club',
-    version: '2.0.2',
+    version: '2.0.3',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
     scheme: 'activeclub',
@@ -16,7 +16,7 @@ export default {
     ios: {
       supportsTablet: false,
       bundleIdentifier: 'com.tbg.loyalty',
-      buildNumber: '1',
+      buildNumber: '2',
       infoPlist: {
         NSCameraUsageDescription: 'This app uses the camera to scan membership barcodes.',
         ITSAppUsesNonExemptEncryption: false,
@@ -24,6 +24,7 @@ export default {
     },
     android: {
       package: 'com.tbg.loyalty',
+      versionCode: 2,
       adaptiveIcon: {
         foregroundImage: './assets/images/adaptive-icon.png',
         backgroundColor: '#ffffff',

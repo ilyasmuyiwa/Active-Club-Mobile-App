@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -164,10 +166,10 @@ export default function ActivitiesScreen() {
       </View>
       
       <View style={styles.activityInfo}>
-        <Text style={[styles.activityType, { color: colors.text }]}>
+        <Text style={[styles.activityType, { color: '#000' }]}>
           {activity.type === 'earned' ? 'Earned' : 'Spend'}
         </Text>
-        <Text style={[styles.activityVenue, { color: colors.icon }]}>
+        <Text style={[styles.activityVenue, { color: '#666' }]}>
           {activity.venue}
         </Text>
       </View>
@@ -215,7 +217,7 @@ export default function ActivitiesScreen() {
 
   const renderDateSection = ({ item }: { item: { date: string; activities: Activity[] } }) => (
     <View style={styles.dateSection}>
-      <Text style={[styles.dateLabel, { color: colors.icon }]}>{item.date}</Text>
+      <Text style={[styles.dateLabel, { color: '#666' }]}>{item.date}</Text>
       {item.activities.map((activity) => (
         <ActivityItem key={activity.id} activity={activity} />
       ))}
@@ -249,7 +251,7 @@ export default function ActivitiesScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}>
         <View style={[styles.header, { backgroundColor: colors.background }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <IconSymbol name="arrow.left" size={28} color={colors.text} />
@@ -267,7 +269,7 @@ export default function ActivitiesScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}>
       <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <IconSymbol name="arrow.left" size={28} color={colors.text} />

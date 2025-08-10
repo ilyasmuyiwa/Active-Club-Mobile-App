@@ -14,7 +14,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  Platform
 } from 'react-native';
 import Svg, { Defs, Path, Stop, LinearGradient as SvgLinearGradient, SvgXml } from 'react-native-svg';
 import { ActiveClubLogoWhiteSvg } from '../../assets/ActiveClubLogoWhite';
@@ -343,7 +344,7 @@ export default function HomeScreen() {
       colors={['#F1C229', '#F1C229', '#F5F5F5']} 
       locations={[0, 0.35, 0.35]}
       style={styles.container}>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
         <StatusBar barStyle="dark-content" backgroundColor="#F1C229" />
         
         <ScrollView 

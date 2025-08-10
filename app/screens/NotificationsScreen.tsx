@@ -5,6 +5,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
@@ -16,7 +18,7 @@ export default function NotificationsScreen() {
   const colors = Colors[colorScheme ?? 'light'];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}>
       <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <IconSymbol name="arrow.left" size={28} color={colors.text} />
@@ -28,8 +30,8 @@ export default function NotificationsScreen() {
       <View style={[styles.content, { backgroundColor: '#E8E8E8' }]}>
         <View style={styles.emptyContainer}>
           <IconSymbol name="bell" size={48} color="#CCCCCC" />
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>No notifications yet</Text>
-          <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
+          <Text style={[styles.emptyTitle, { color: '#000' }]}>No notifications yet</Text>
+          <Text style={[styles.emptySubtitle, { color: '#666' }]}>
             You'll receive notifications about your points, rewards, and achievements here
           </Text>
         </View>

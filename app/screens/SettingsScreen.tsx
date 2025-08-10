@@ -11,6 +11,8 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { useUser } from '../../contexts/UserContext';
 import SuccessAlert from '@/components/SuccessAlert';
@@ -81,7 +83,7 @@ export default function SettingsScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>

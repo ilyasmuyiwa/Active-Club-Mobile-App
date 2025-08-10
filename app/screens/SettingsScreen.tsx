@@ -22,7 +22,6 @@ export default function SettingsScreen() {
   
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [smsNotifications, setSmsNotifications] = useState(true);
-  const [language] = useState('English');
   const [showAlert, setShowAlert] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [alertMessage, setAlertMessage] = useState({ title: '', message: '', type: 'error' as 'success' | 'error' });
@@ -117,16 +116,6 @@ export default function SettingsScreen() {
                 thumbColor={smsNotifications ? '#FFF' : '#f4f3f4'}
               />
             }
-          />
-          
-          <SettingsItem
-            title="Language"
-            rightElement={
-              <Text style={[styles.languageText, { color: colors.text }]}>
-                {language}
-              </Text>
-            }
-            onPress={() => {}}
           />
           
           <SettingsItem

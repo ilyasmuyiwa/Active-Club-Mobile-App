@@ -29,7 +29,9 @@
       "Bash(mv:*)",
       "Bash(git mv:*)",
       "Bash(npm run build:android:*)",
-      "Bash(eas build:list:*)"
+      "Bash(eas build:list:*)",
+      "Bash(cat:*)",
+      "Bash(eas submit:*)"
     ],
     "deny": []
   }

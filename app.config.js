@@ -2,7 +2,7 @@ export default {
   expo: {
     name: 'Active Club',
     slug: 'active-club',
-    version: '2.0.1',
+    version: '2.0.2',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
     scheme: 'activeclub',

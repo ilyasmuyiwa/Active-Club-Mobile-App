@@ -25,9 +25,10 @@ export default {
     android: {
       package: 'com.tbg.loyalty',
       versionCode: 2,
+      icon: './assets/images/icon.png',
       adaptiveIcon: {
         foregroundImage: './assets/images/adaptive-icon.png',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#F1C229',
       },
       edgeToEdgeEnabled: true,
     },

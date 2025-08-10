@@ -28,7 +28,7 @@ export default {
       icon: './assets/images/icon.png',
       adaptiveIcon: {
         foregroundImage: './assets/images/adaptive-icon.png',
-        backgroundColor: '#F1C229',
+        backgroundColor: '#000000',
       },
       edgeToEdgeEnabled: true,
     },

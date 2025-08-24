@@ -16,7 +16,7 @@ export default {
     ios: {
       supportsTablet: false,
       bundleIdentifier: 'com.tbg.loyalty',
-      buildNumber: '2',
+      buildNumber: '3',
       infoPlist: {
         NSCameraUsageDescription: 'This app uses the camera to scan membership barcodes.',
         ITSAppUsesNonExemptEncryption: false,
@@ -24,11 +24,15 @@ export default {
     },
     android: {
       package: 'com.tbg.loyalty',
-      versionCode: 2,
+      versionCode: 3,
       icon: './assets/images/icon.png',
       adaptiveIcon: {
         foregroundImage: './assets/images/adaptive-icon.png',
         backgroundColor: '#000000',
+      },
+      notification: {
+        icon: './assets/images/icon.png',
+        color: '#F1C229',
       },
       edgeToEdgeEnabled: true,
     },
@@ -47,6 +51,14 @@ export default {
           resizeMode: 'contain',
           backgroundColor: '#F1C229',
         },
+      ],
+      [
+        'expo-notifications',
+        {
+          icon: './assets/images/icon.png',
+          color: '#F1C229',
+          defaultChannel: 'default',
+        }
       ],
     ],
     experiments: {

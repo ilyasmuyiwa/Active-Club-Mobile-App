@@ -31,7 +31,10 @@
       "Bash(npm run build:android:*)",
       "Bash(eas build:list:*)",
       "Bash(cat:*)",
-      "Bash(eas submit:*)"
+      "Bash(eas submit:*)",
+      "Bash(open https://expo.dev/accounts/ilyas.soladogun/projects/active-club/builds/9d4508e2-d1d3-4aa9-bd1d-c20d602f35d6)",
+      "Bash(pod install:*)",
+      "Bash(eas build:*)"
     ],
     "deny": []
   }

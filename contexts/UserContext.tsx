@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { authService } from '../services/authService';
+import notificationService from '../services/notificationService';
 import { router } from 'expo-router';
 import { AppState, AppStateStatus } from 'react-native';
 
@@ -36,6 +37,17 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const phone = await authService.getPhoneNumber();
         console.log('🔐 UserContext: Loaded phone from session:', phone);
         setPhoneNumber(phone);
+        
+        // Initialize push notifications for authenticated user
+        if (phone) {
+          console.log('🔔 UserContext: Initializing push notifications for:', phone);
+          try {
+            await notificationService.initialize(phone);
+            console.log('🔔 UserContext: Push notifications initialized successfully');
+          } catch (error) {
+            console.error('🔔 UserContext: Failed to initialize push notifications:', error);
+          }
+        }
       } else {
         console.log('🔐 UserContext: No authenticated session found');
         setPhoneNumber(null);
@@ -104,6 +116,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('🔐 UserContext: Logging out user');
       stopSessionCheck();
       setIsInAuthFlow(true); // Set auth flow to prevent session checks during logout
+      
+      // Clean up push notifications
+      console.log('🔔 UserContext: Cleaning up push notifications');
+      await notificationService.unregisterPushToken();
+      
       await authService.logout();
       setIsAuthenticated(false);
       setPhoneNumber(null);

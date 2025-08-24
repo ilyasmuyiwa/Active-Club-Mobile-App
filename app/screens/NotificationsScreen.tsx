@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,15 +7,147 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
+  FlatList,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
+import { useUser } from '@/contexts/UserContext';
+import { notificationHistoryService, NotificationItem } from '@/services/notificationHistoryService';
 
 export default function NotificationsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { phoneNumber } = useUser();
+  
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchNotifications = useCallback(async (showRefreshIndicator = false) => {
+    if (!phoneNumber) return;
+
+    try {
+      if (showRefreshIndicator) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
+      setError(null);
+
+      const response = await notificationHistoryService.getHistory(phoneNumber, 20);
+      
+      if (response.success) {
+        setNotifications(response.notifications);
+      } else {
+        setError('Failed to load notifications');
+      }
+    } catch (err) {
+      setError('Unable to connect to server');
+      console.error('Error fetching notifications:', err);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [phoneNumber]);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  const handleNotificationPress = async (notification: NotificationItem) => {
+    // Mark as read if not already
+    if (!notification.is_read && phoneNumber) {
+      await notificationHistoryService.markAsRead(notification.id, phoneNumber);
+      
+      // Update local state
+      setNotifications(prev => 
+        prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n)
+      );
+    }
+
+    // Navigate based on notification type
+    switch (notification.type) {
+      case 'points_earned':
+        router.push('/(tabs)/activities');
+        break;
+      case 'level_up':
+        router.push('/screens/UserLevelScreen');
+        break;
+      case 'partner_offer':
+        router.push('/(tabs)/partners');
+        break;
+      default:
+        // Stay on notifications screen
+        break;
+    }
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'points_earned':
+        return 'star.fill';
+      case 'level_up':
+        return 'arrow.up.circle.fill';
+      case 'partner_offer':
+        return 'gift.fill';
+      default:
+        return 'bell.fill';
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 1) {
+      return 'Just now';
+    } else if (diffInHours < 24) {
+      return `${Math.floor(diffInHours)}h ago`;
+    } else if (diffInHours < 48) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
+
+  const renderNotification = ({ item }: { item: NotificationItem }) => (
+    <TouchableOpacity
+      style={[
+        styles.notificationItem,
+        { backgroundColor: item.is_read ? colors.background : '#FFF8DC' }
+      ]}
+      onPress={() => handleNotificationPress(item)}
+      activeOpacity={0.7}
+    >
+      <View style={[styles.iconContainer, { backgroundColor: '#F1C229' }]}>
+        <IconSymbol name={getNotificationIcon(item.type)} size={20} color="#000" />
+      </View>
+      
+      <View style={styles.notificationContent}>
+        <Text style={[styles.notificationTitle, { color: colors.text }]}>
+          {item.title}
+        </Text>
+        <Text style={[styles.notificationBody, { color: colors.text, opacity: 0.7 }]}>
+          {item.body}
+        </Text>
+        <Text style={[styles.notificationTime, { color: colors.text, opacity: 0.5 }]}>
+          {formatDate(item.created_at)}
+        </Text>
+      </View>
+
+      {!item.is_read && (
+        <View style={styles.unreadDot} />
+      )}
+    </TouchableOpacity>
+  );
+
+  const renderSeparator = () => <View style={styles.separator} />;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}>
@@ -28,13 +160,45 @@ export default function NotificationsScreen() {
       </View>
 
       <View style={[styles.content, { backgroundColor: '#E8E8E8' }]}>
-        <View style={styles.emptyContainer}>
-          <IconSymbol name="bell" size={48} color="#CCCCCC" />
-          <Text style={[styles.emptyTitle, { color: '#000' }]}>No notifications yet</Text>
-          <Text style={[styles.emptySubtitle, { color: '#666' }]}>
-            You'll receive notifications about your points, rewards, and achievements here
-          </Text>
-        </View>
+        {isLoading && !isRefreshing ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#F1C229" />
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <IconSymbol name="exclamationmark.triangle" size={48} color="#FF6B6B" />
+            <Text style={[styles.errorTitle, { color: '#000' }]}>{error}</Text>
+            <TouchableOpacity 
+              style={styles.retryButton}
+              onPress={() => fetchNotifications()}
+            >
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        ) : notifications.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <IconSymbol name="bell" size={48} color="#CCCCCC" />
+            <Text style={[styles.emptyTitle, { color: '#000' }]}>No notifications yet</Text>
+            <Text style={[styles.emptySubtitle, { color: '#666' }]}>
+              You'll receive notifications about your points, rewards, and achievements here
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={notifications}
+            renderItem={renderNotification}
+            keyExtractor={(item) => item.id.toString()}
+            ItemSeparatorComponent={renderSeparator}
+            contentContainerStyle={styles.listContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={() => fetchNotifications(true)}
+                tintColor="#F1C229"
+              />
+            }
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -60,7 +224,35 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 20,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#F1C229',
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 25,
+  },
+  retryButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,
@@ -80,5 +272,51 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     opacity: 0.7,
+  },
+  listContent: {
+    paddingVertical: 10,
+  },
+  notificationItem: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    alignItems: 'flex-start',
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  notificationContent: {
+    flex: 1,
+    marginRight: 10,
+  },
+  notificationTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  notificationBody: {
+    fontSize: 14,
+    marginBottom: 4,
+    lineHeight: 20,
+  },
+  notificationTime: {
+    fontSize: 12,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#F1C229',
+    marginTop: 6,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 20,
   },
 });

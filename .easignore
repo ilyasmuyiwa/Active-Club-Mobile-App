@@ -1,0 +1,28 @@
+# EAS Build ignore file
+# Ignore iOS and Android folders to let EAS generate them
+ios/
+android/
+
+# Ignore common temporary files
+.DS_Store
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Ignore local environment files
+.env.local
+.env.*.local
+
+# Ignore test coverage
+coverage/
+
+# Ignore IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Ignore build artifacts
+dist/
+build/

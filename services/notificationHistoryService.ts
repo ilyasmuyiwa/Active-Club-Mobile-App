@@ -2,7 +2,7 @@ export interface NotificationItem {
   id: number;
   title: string;
   body: string;
-  type: 'points_earned' | 'level_up' | 'partner_offer' | 'general';
+  type: 'points_earned' | 'level_up' | 'partner_offer' | 'redemption' | 'general';
   points?: number;
   store?: string;
   status: 'sent' | 'failed';

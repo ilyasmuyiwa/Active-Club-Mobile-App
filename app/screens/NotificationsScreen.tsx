@@ -91,6 +91,8 @@ export default function NotificationsScreen() {
         return 'arrow.up.circle.fill';
       case 'partner_offer':
         return 'gift.fill';
+      case 'redemption':
+        return 'minus.circle.fill';
       default:
         return 'bell.fill';
     }
@@ -232,7 +234,7 @@ export default function NotificationsScreen() {
                 {selectedNotification.points && (
                   <View style={styles.modalPointsContainer}>
                     <Text style={[styles.modalPoints, { color: '#F1C229' }]}>
-                      +{selectedNotification.points} points
+                      {selectedNotification.type === 'redemption' ? '-' : '+'}{selectedNotification.points} points
                     </Text>
                   </View>
                 )}

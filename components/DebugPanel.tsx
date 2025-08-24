@@ -25,6 +25,8 @@ interface DebugInfo {
   permissions: string;
   registrationStatus: string;
   timestamp: string;
+  lastNotificationReceived: string | null;
+  notificationCount: number;
 }
 
 export default function DebugPanel() {
@@ -33,6 +35,33 @@ export default function DebugPanel() {
   const [isVisible, setIsVisible] = useState(false);
   const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // Listen for notifications
+    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
+      console.log('🔔 Notification received:', notification);
+      AsyncStorage.setItem('last_notification', JSON.stringify({
+        title: notification.request.content.title,
+        body: notification.request.content.body,
+        timestamp: new Date().toISOString(),
+      }));
+      
+      // Increment counter
+      AsyncStorage.getItem('notification_count').then(count => {
+        const newCount = (parseInt(count || '0') + 1).toString();
+        AsyncStorage.setItem('notification_count', newCount);
+      });
+    });
+
+    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('🔔 Notification response:', response);
+    });
+
+    return () => {
+      Notifications.removeNotificationSubscription(notificationListener);
+      Notifications.removeNotificationSubscription(responseListener);
+    };
+  }, []);
 
   const collectDebugInfo = async () => {
     setIsLoading(true);
@@ -59,6 +88,16 @@ export default function DebugPanel() {
       const storedToken = await AsyncStorage.getItem('push_token');
       const registrationStatus = storedToken ? 'Token Stored' : 'Not Stored';
 
+      // Get notification history
+      const lastNotificationData = await AsyncStorage.getItem('last_notification');
+      const notificationCount = await AsyncStorage.getItem('notification_count');
+      
+      let lastNotificationReceived = null;
+      if (lastNotificationData) {
+        const notificationInfo = JSON.parse(lastNotificationData);
+        lastNotificationReceived = `${notificationInfo.title} - ${new Date(notificationInfo.timestamp).toLocaleTimeString()}`;
+      }
+
       const info: DebugInfo = {
         pushToken,
         tokenType,
@@ -68,6 +107,8 @@ export default function DebugPanel() {
         permissions: status,
         registrationStatus,
         timestamp: new Date().toLocaleTimeString(),
+        lastNotificationReceived: lastNotificationReceived || 'None received',
+        notificationCount: parseInt(notificationCount || '0'),
       };
 
       setDebugInfo(info);
@@ -96,6 +137,8 @@ Platform: ${debugInfo.platform}
 Device: ${debugInfo.deviceName}
 Permissions: ${debugInfo.permissions}
 Registration: ${debugInfo.registrationStatus}
+Notifications Received: ${debugInfo.notificationCount}
+Last Notification: ${debugInfo.lastNotificationReceived}
 Timestamp: ${debugInfo.timestamp}
 ==========================================
     `.trim();
@@ -168,6 +211,18 @@ Timestamp: ${debugInfo.timestamp}
                 color: debugInfo.registrationStatus === 'Token Stored' ? '#4CAF50' : '#FF6B6B' 
               }]}>
                 Registration: {debugInfo.registrationStatus}
+              </Text>
+            </View>
+
+            <View style={styles.debugSection}>
+              <Text style={[styles.sectionTitle, { color: '#F1C229' }]}>Notification Tracking</Text>
+              <Text style={[styles.statusText, { 
+                color: debugInfo.notificationCount > 0 ? '#4CAF50' : '#FF6B6B' 
+              }]}>
+                Notifications Received: {debugInfo.notificationCount}
+              </Text>
+              <Text style={[styles.debugText, { color: colors.text }]}>
+                Last Notification: {debugInfo.lastNotificationReceived}
               </Text>
             </View>
 

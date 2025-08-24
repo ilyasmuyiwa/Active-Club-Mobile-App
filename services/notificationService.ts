@@ -86,8 +86,14 @@ class NotificationService {
 
       console.log('🔔 Generating new push token...');
       // Get new token
-      const token = (await Notifications.getExpoPushTokenAsync()).data;
+      const token = (await Notifications.getExpoPushTokenAsync({
+        projectId: '833c3db2-bec6-4f1e-b653-9765287a1188',
+      })).data;
       console.log('🔔 Generated new push token:', token);
+      console.log('🔔 Token type:', token?.startsWith('ExponentPushToken') ? 'Expo Token' : 'Native Token');
+      console.log('🔔 App environment:', __DEV__ ? 'Development' : 'Production');
+      console.log('🔔 Device platform:', Platform.OS);
+      
       this.pushToken = token;
 
       // Cache the token

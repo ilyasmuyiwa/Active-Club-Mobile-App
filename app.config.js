@@ -16,7 +16,7 @@ export default {
     ios: {
       supportsTablet: false,
       bundleIdentifier: 'com.tbg.loyalty',
-      buildNumber: '5',
+      buildNumber: '7',
       infoPlist: {
         NSCameraUsageDescription: 'This app uses the camera to scan membership barcodes.',
         ITSAppUsesNonExemptEncryption: false,

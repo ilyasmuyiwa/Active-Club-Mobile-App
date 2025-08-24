@@ -68,37 +68,27 @@ class NotificationService {
    */
   async getPushToken(): Promise<string | null> {
     try {
-      console.log('🔔 Getting push token...');
-      
       // Check if we already have a cached token
       if (this.pushToken) {
-        console.log('🔔 Using cached push token:', this.pushToken);
         return this.pushToken;
       }
 
       // Try to get from storage
       const storedToken = await AsyncStorage.getItem(PUSH_TOKEN_KEY);
       if (storedToken) {
-        console.log('🔔 Using stored push token:', storedToken);
         this.pushToken = storedToken;
         return storedToken;
       }
 
-      console.log('🔔 Generating new push token...');
       // Get new token
       const token = (await Notifications.getExpoPushTokenAsync({
         projectId: '833c3db2-bec6-4f1e-b653-9765287a1188',
       })).data;
-      console.log('🔔 Generated new push token:', token);
-      console.log('🔔 Token type:', token?.startsWith('ExponentPushToken') ? 'Expo Token' : 'Native Token');
-      console.log('🔔 App environment:', __DEV__ ? 'Development' : 'Production');
-      console.log('🔔 Device platform:', Platform.OS);
       
       this.pushToken = token;
 
       // Cache the token
       await AsyncStorage.setItem(PUSH_TOKEN_KEY, token);
-      console.log('🔔 Cached push token in storage');
       
       return token;
     } catch (error) {

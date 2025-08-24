@@ -83,7 +83,14 @@ export default function NotificationsScreen() {
     setSelectedNotification(null);
   };
 
-  const getNotificationIcon = (type: string) => {
+  const getNotificationIcon = (type: string, title?: string, body?: string) => {
+    // Check for redemption in type, title, or body
+    if (type === 'redemption' || 
+        title?.toLowerCase().includes('redeem') ||
+        body?.toLowerCase().includes('redeem')) {
+      return 'minus.circle.fill';
+    }
+    
     switch (type) {
       case 'points_earned':
         return 'star.fill';
@@ -91,8 +98,6 @@ export default function NotificationsScreen() {
         return 'arrow.up.circle.fill';
       case 'partner_offer':
         return 'gift.fill';
-      case 'redemption':
-        return 'minus.circle.fill';
       default:
         return 'bell.fill';
     }
@@ -124,7 +129,7 @@ export default function NotificationsScreen() {
       activeOpacity={0.7}
     >
       <View style={[styles.iconContainer, { backgroundColor: '#F1C229' }]}>
-        <IconSymbol name={getNotificationIcon(item.type)} size={20} color="#000" />
+        <IconSymbol name={getNotificationIcon(item.type, item.title, item.body)} size={20} color="#000" />
       </View>
       
       <View style={styles.notificationContent}>
@@ -213,7 +218,7 @@ export default function NotificationsScreen() {
                 <View style={styles.modalHeader}>
                   <View style={[styles.modalIconContainer, { backgroundColor: '#F1C229' }]}>
                     <IconSymbol 
-                      name={getNotificationIcon(selectedNotification.type)} 
+                      name={getNotificationIcon(selectedNotification.type, selectedNotification.title, selectedNotification.body)} 
                       size={24} 
                       color="#000" 
                     />
@@ -234,7 +239,9 @@ export default function NotificationsScreen() {
                 {selectedNotification.points && (
                   <View style={styles.modalPointsContainer}>
                     <Text style={[styles.modalPoints, { color: '#F1C229' }]}>
-                      {selectedNotification.type === 'redemption' ? '-' : '+'}{selectedNotification.points} points
+                      {(selectedNotification.type === 'redemption' || 
+                        selectedNotification.title?.toLowerCase().includes('redeem') ||
+                        selectedNotification.body?.toLowerCase().includes('redeem')) ? '-' : '+'}{selectedNotification.points} points
                     </Text>
                   </View>
                 )}

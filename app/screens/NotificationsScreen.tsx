@@ -10,6 +10,7 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  Modal,
 } from 'react-native';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
@@ -27,6 +28,8 @@ export default function NotificationsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   const fetchNotifications = useCallback(async (showRefreshIndicator = false) => {
     if (!phoneNumber) return;
@@ -70,21 +73,14 @@ export default function NotificationsScreen() {
       );
     }
 
-    // Navigate based on notification type
-    switch (notification.type) {
-      case 'points_earned':
-        router.push('/(tabs)/activities');
-        break;
-      case 'level_up':
-        router.push('/screens/UserLevelScreen');
-        break;
-      case 'partner_offer':
-        router.push('/(tabs)/partners');
-        break;
-      default:
-        // Stay on notifications screen
-        break;
-    }
+    // Show notification details in modal
+    setSelectedNotification(notification);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedNotification(null);
   };
 
   const getNotificationIcon = (type: string) => {
@@ -200,6 +196,68 @@ export default function NotificationsScreen() {
           />
         )}
       </View>
+
+      {/* Notification Details Modal */}
+      <Modal
+        visible={showModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+            {selectedNotification && (
+              <>
+                <View style={styles.modalHeader}>
+                  <View style={[styles.modalIconContainer, { backgroundColor: '#F1C229' }]}>
+                    <IconSymbol 
+                      name={getNotificationIcon(selectedNotification.type)} 
+                      size={24} 
+                      color="#000" 
+                    />
+                  </View>
+                  <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
+                    <IconSymbol name="xmark" size={20} color={colors.text} />
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={[styles.modalTitle, { color: colors.text }]}>
+                  {selectedNotification.title}
+                </Text>
+                
+                <Text style={[styles.modalBody, { color: colors.text }]}>
+                  {selectedNotification.body}
+                </Text>
+
+                {selectedNotification.points && (
+                  <View style={styles.modalPointsContainer}>
+                    <Text style={[styles.modalPoints, { color: '#F1C229' }]}>
+                      +{selectedNotification.points} points
+                    </Text>
+                  </View>
+                )}
+
+                {selectedNotification.store && (
+                  <Text style={[styles.modalStore, { color: colors.text, opacity: 0.7 }]}>
+                    at {selectedNotification.store}
+                  </Text>
+                )}
+
+                <Text style={[styles.modalDate, { color: colors.text, opacity: 0.5 }]}>
+                  {formatDate(selectedNotification.created_at)}
+                </Text>
+
+                <TouchableOpacity 
+                  style={styles.modalButton}
+                  onPress={closeModal}
+                >
+                  <Text style={styles.modalButtonText}>Got it</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -318,5 +376,84 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#E0E0E0',
     marginHorizontal: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  modalContent: {
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 350,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButton: {
+    padding: 8,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  modalBody: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalPointsContainer: {
+    backgroundColor: '#FFF8DC',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  modalPoints: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  modalStore: {
+    fontSize: 14,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalDate: {
+    fontSize: 12,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  modalButton: {
+    backgroundColor: '#F1C229',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 25,
+    alignSelf: 'center',
+  },
+  modalButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

@@ -19,24 +19,47 @@ export interface NotificationHistoryResponse {
 export const notificationHistoryService = {
   async getHistory(mobile: string, limit: number = 20): Promise<NotificationHistoryResponse> {
     try {
-      // Ensure phone number has + prefix
-      const formattedMobile = mobile.startsWith('+') ? mobile : `+${mobile}`;
+      const url = `https://sportscorner.qa/rest/V1/push-notification/history?mobile=${encodeURIComponent(mobile)}&limit=${limit}`;
+      console.log('🔔 NotificationAPI: Fetching from URL:', url);
+      console.log('🔔 NotificationAPI: Mobile number:', mobile);
       
-      const response = await fetch(
-        `https://sportscorner.qa/rest/V1/push-notification/history?mobile=${encodeURIComponent(formattedMobile)}&limit=${limit}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
+      console.log('🔔 NotificationAPI: Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.log('🔔 NotificationAPI: Error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
 
-      const data = await response.json();
+      const responseText = await response.text();
+      console.log('🔔 NotificationAPI: Raw response:', responseText);
+      
+      // Handle malformed response - server returns phone number prefix before JSON
+      let cleanResponse = responseText;
+      const phonePrefix = `+${mobile.replace('+', '')}`;
+      if (responseText.startsWith(phonePrefix)) {
+        cleanResponse = responseText.substring(phonePrefix.length);
+      }
+      
+      console.log('🔔 NotificationAPI: Cleaned response:', cleanResponse);
+      
+      // Parse the cleaned response which should be [success, notifications, total]
+      const parsedArray = JSON.parse(cleanResponse);
+      
+      // Transform to expected format
+      const data: NotificationHistoryResponse = {
+        success: parsedArray[0] || false,
+        notifications: parsedArray[1] || [],
+        total: parsedArray[2] || 0
+      };
+      
       return data;
     } catch (error) {
       console.error('Error fetching notification history:', error);
@@ -46,9 +69,6 @@ export const notificationHistoryService = {
 
   async markAsRead(notificationId: number, mobile: string): Promise<boolean> {
     try {
-      // Ensure phone number has + prefix
-      const formattedMobile = mobile.startsWith('+') ? mobile : `+${mobile}`;
-      
       const response = await fetch(
         `https://sportscorner.qa/rest/V1/push-notification/read/${notificationId}`,
         {
@@ -56,7 +76,7 @@ export const notificationHistoryService = {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ mobile: formattedMobile }),
+          body: JSON.stringify({ mobile }),
         }
       );
 

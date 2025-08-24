@@ -22,6 +22,7 @@ import { ActiveClubLogoWhiteSvg } from '../../assets/ActiveClubLogoWhite';
 import { ScIconSvg } from '../../assets/ScIcon';
 import { useUser } from '../../contexts/UserContext';
 import { capillaryApi, CustomerData } from '../../services/capillaryApi';
+import DebugPanel from '../../components/DebugPanel';
 
 const { width } = Dimensions.get('window');
 
@@ -598,6 +599,9 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
+      
+      {/* Debug Panel for Push Notifications */}
+      <DebugPanel />
     </LinearGradient>
   );
 }

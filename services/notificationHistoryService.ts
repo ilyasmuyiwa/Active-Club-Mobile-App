@@ -19,8 +19,11 @@ export interface NotificationHistoryResponse {
 export const notificationHistoryService = {
   async getHistory(mobile: string, limit: number = 20): Promise<NotificationHistoryResponse> {
     try {
+      // Ensure phone number has + prefix
+      const formattedMobile = mobile.startsWith('+') ? mobile : `+${mobile}`;
+      
       const response = await fetch(
-        `https://sportscorner.qa/rest/V1/push-notification/history?mobile=${mobile}&limit=${limit}`,
+        `https://sportscorner.qa/rest/V1/push-notification/history?mobile=${encodeURIComponent(formattedMobile)}&limit=${limit}`,
         {
           method: 'GET',
           headers: {
@@ -43,6 +46,9 @@ export const notificationHistoryService = {
 
   async markAsRead(notificationId: number, mobile: string): Promise<boolean> {
     try {
+      // Ensure phone number has + prefix
+      const formattedMobile = mobile.startsWith('+') ? mobile : `+${mobile}`;
+      
       const response = await fetch(
         `https://sportscorner.qa/rest/V1/push-notification/read/${notificationId}`,
         {
@@ -50,7 +56,7 @@ export const notificationHistoryService = {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ mobile }),
+          body: JSON.stringify({ mobile: formattedMobile }),
         }
       );
 

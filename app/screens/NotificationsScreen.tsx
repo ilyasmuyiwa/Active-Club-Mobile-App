@@ -133,13 +133,13 @@ export default function NotificationsScreen() {
       </View>
       
       <View style={styles.notificationContent}>
-        <Text style={[styles.notificationTitle, { color: colors.text }]}>
+        <Text style={[styles.notificationTitle, { color: '#000' }]}>
           {item.title}
         </Text>
-        <Text style={[styles.notificationBody, { color: colors.text, opacity: 0.7 }]}>
+        <Text style={[styles.notificationBody, { color: '#333' }]}>
           {item.body}
         </Text>
-        <Text style={[styles.notificationTime, { color: colors.text, opacity: 0.5 }]}>
+        <Text style={[styles.notificationTime, { color: '#666' }]}>
           {formatDate(item.created_at)}
         </Text>
       </View>
@@ -228,11 +228,11 @@ export default function NotificationsScreen() {
                   </TouchableOpacity>
                 </View>
 
-                <Text style={[styles.modalTitle, { color: colors.text }]}>
+                <Text style={[styles.modalTitle, { color: '#000' }]}>
                   {selectedNotification.title}
                 </Text>
                 
-                <Text style={[styles.modalBody, { color: colors.text }]}>
+                <Text style={[styles.modalBody, { color: '#333' }]}>
                   {selectedNotification.body}
                 </Text>
 
@@ -247,12 +247,12 @@ export default function NotificationsScreen() {
                 )}
 
                 {selectedNotification.store && (
-                  <Text style={[styles.modalStore, { color: colors.text, opacity: 0.7 }]}>
+                  <Text style={[styles.modalStore, { color: '#666' }]}>
                     at {selectedNotification.store}
                   </Text>
                 )}
 
-                <Text style={[styles.modalDate, { color: colors.text, opacity: 0.5 }]}>
+                <Text style={[styles.modalDate, { color: '#999' }]}>
                   {formatDate(selectedNotification.created_at)}
                 </Text>
 

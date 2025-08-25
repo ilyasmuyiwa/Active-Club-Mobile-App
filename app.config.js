@@ -25,7 +25,7 @@ export default {
     android: {
       package: 'com.tbg.loyalty',
       versionCode: 4,
-      icon: './assets/images/icon.png',
+      icon: './assets/images/adaptive-icon.png',
       adaptiveIcon: {
         foregroundImage: './assets/images/adaptive-icon.png',
         backgroundColor: '#000000',

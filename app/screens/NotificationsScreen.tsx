@@ -123,7 +123,7 @@ export default function NotificationsScreen() {
     <TouchableOpacity
       style={[
         styles.notificationItem,
-        { backgroundColor: item.is_read ? colors.background : '#FFF8DC' }
+        { backgroundColor: item.is_read ? '#FFFFFF' : '#FFF8DC' }
       ]}
       onPress={() => handleNotificationPress(item)}
       activeOpacity={0.7}
@@ -212,7 +212,7 @@ export default function NotificationsScreen() {
         onRequestClose={closeModal}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+          <View style={[styles.modalContent, { backgroundColor: '#FFFFFF' }]}>
             {selectedNotification && (
               <>
                 <View style={styles.modalHeader}>
@@ -224,7 +224,7 @@ export default function NotificationsScreen() {
                     />
                   </View>
                   <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
-                    <IconSymbol name="xmark" size={20} color={colors.text} />
+                    <IconSymbol name="xmark" size={20} color="#333" />
                   </TouchableOpacity>
                 </View>
 
